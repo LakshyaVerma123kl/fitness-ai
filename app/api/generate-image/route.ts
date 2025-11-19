@@ -133,8 +133,6 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("🎨 Generating image for:", prompt);
-
     // Enhanced prompts
     const enhancedPrompt =
       type === "exercise"
@@ -147,8 +145,6 @@ export async function POST(req: Request) {
     // We try Pollinations first (easiest/cheapest), then Gemini (high quality), then others
     for (const provider of IMAGE_PROVIDERS) {
       try {
-        console.log(`🎨 Trying ${provider.name}...`);
-
         if (provider.name === "pollinations") {
           imageUrl = await callPollinations(enhancedPrompt);
         } else if (provider.name === "gemini" && process.env.GOOGLE_API_KEY) {
@@ -166,17 +162,15 @@ export async function POST(req: Request) {
         }
 
         if (imageUrl) {
-          console.log(`✅ Image generated with ${provider.name}!`);
           return NextResponse.json({ imageUrl });
         }
       } catch (error: any) {
-        console.log(`⚠️ ${provider.name} failed:`, error.message);
         // Continue to next provider loop
       }
     }
 
     // If all providers fail, return placeholder
-    console.log("❌ All providers failed, using fallback.");
+
     return NextResponse.json({
       imageUrl: `https://via.placeholder.com/512x512/1a1a1a/00e599?text=${encodeURIComponent(
         type === "exercise" ? "Exercise" : "Meal"

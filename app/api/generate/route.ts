@@ -91,8 +91,6 @@ async function callHuggingFace(prompt: string, model: string) {
 }
 
 export async function POST(req: Request) {
-  console.log("\n=== 🚀 API ROUTE CALLED ===");
-
   try {
     const body = await req.json();
     const {
@@ -108,20 +106,6 @@ export async function POST(req: Request) {
       medicalHistory,
       stressLevel,
     } = body;
-
-    console.log("📋 Request Data:", {
-      name,
-      age,
-      gender,
-      weight,
-      height,
-      goal,
-      level,
-      diet,
-      equipment,
-      medicalHistory,
-      stressLevel,
-    });
 
     // Validate Required Fields
     if (!age || !weight || !height) {
@@ -233,20 +217,14 @@ Requirements:
       const { provider, model, name: providerName } = PROVIDERS[i];
 
       try {
-        console.log(
-          `\n🤖 Attempting ${i + 1}/${PROVIDERS.length}: ${providerName}...`
-        );
-
         let responseText = "";
 
         if (provider === "gemini") {
           const apiKey = process.env.GEMINI_API_KEY;
           if (!apiKey) {
-            console.log("⏭️ Skipping Gemini (no API key)");
             continue;
           }
 
-          console.log("📤 Sending request to Gemini...");
           const genAI = new GoogleGenerativeAI(apiKey);
           const geminiModel = genAI.getGenerativeModel({ model });
           const result = await geminiModel.generateContent(prompt);
@@ -254,22 +232,17 @@ Requirements:
           responseText = response.text();
         } else if (provider === "groq") {
           if (!process.env.GROQ_API_KEY) {
-            console.log("⏭️ Skipping Groq (no API key)");
             continue;
           }
-          console.log("📤 Sending request to Groq...");
+
           responseText = await callGroq(prompt, model);
         } else if (provider === "huggingface") {
           if (!process.env.HUGGINGFACE_API_KEY) {
-            console.log("⏭️ Skipping HuggingFace (no API key)");
             continue;
           }
-          console.log("📤 Sending request to HuggingFace...");
+
           responseText = await callHuggingFace(prompt, model);
         }
-
-        console.log("📥 Response received!");
-        console.log("  - Length:", responseText.length);
 
         // Clean Response
         let cleanedText = responseText.trim();
@@ -289,7 +262,7 @@ Requirements:
         cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
 
         // Parse JSON
-        console.log("🔄 Parsing JSON...");
+
         const parsedData = JSON.parse(cleanedText);
 
         // Validate Structure
@@ -301,7 +274,6 @@ Requirements:
           throw new Error("Invalid diet structure");
         }
 
-        console.log(`✅ SUCCESS! Plan generated using ${providerName}`);
         return NextResponse.json({
           ...parsedData,
           _provider: providerName,
@@ -318,9 +290,8 @@ Requirements:
         }
 
         const delay = 1000;
-        console.log(`⏳ Waiting ${delay}ms before trying next provider...`);
+
         await new Promise((resolve) => setTimeout(resolve, delay));
-        console.log("🔄 Switching to backup provider...");
       }
     }
 
