@@ -17,7 +17,7 @@
 }
 
 /* ===========================================
-   LIGHT MODE — IMPROVED VISIBILITY
+   LIGHT MODE – IMPROVED VISIBILITY
 =========================================== */
 
 :root:not(.dark) {
@@ -162,11 +162,51 @@ body {
 }
 
 /* ===========================================
+   RESPONSIVE UTILITIES
+=========================================== */
+
+/* Mobile-specific adjustments */
+@media (max-width: 640px) {
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 2rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  h3 {
+    font-size: 1.25rem !important;
+  }
+
+  .glass-card {
+    padding: 1rem;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .glass-card {
+    padding: 1.5rem;
+  }
+}
+
+/* ===========================================
    SCROLLBAR
 =========================================== */
 
 ::-webkit-scrollbar {
   width: 8px;
+}
+
+@media (max-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -213,4 +253,15 @@ body {
 
 .animate-pulse-slow {
   animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===========================================
+   SAFE AREA PADDING (for notched devices)
+=========================================== */
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
 }

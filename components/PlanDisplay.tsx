@@ -303,84 +303,85 @@ export default function PlanDisplay({
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="w-full max-w-5xl mx-auto space-y-6 md:space-y-8 pb-20 px-4 md:px-6">
       {/* Header & Quote */}
       {plan.motivation_quote && (
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-center"
+          className="text-center mt-4"
         >
-          <div className="glass-card inline-block px-8 py-6 rounded-2xl border border-primary/30 bg-gradient-to-r from-purple-900/20 to-blue-900/20">
-            <Sparkles className="inline-block text-yellow-400 mb-3" size={28} />
-            <p className="text-gray-100 text-xl italic font-light">
+          <div className="glass-card inline-block px-6 py-5 md:px-8 md:py-6 rounded-2xl border border-primary/30 bg-linear-to-r from-purple-900/20 to-blue-900/20 w-full md:w-auto">
+            <Sparkles className="inline-block text-yellow-400 mb-3" size={24} />
+            <p className="text-gray-100 text-lg md:text-xl italic font-light">
               "{plan.motivation_quote}"
             </p>
           </div>
         </motion.div>
       )}
 
-      {/* User Stats Badges (New) */}
-      <div className="flex flex-wrap justify-center gap-4">
+      {/* User Stats Badges */}
+      <div className="flex flex-wrap justify-center gap-3 md:gap-4">
         {plan._bmi && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 text-sm text-gray-300">
-            <Activity size={16} className="text-blue-400" />
+          <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white/5 rounded-full border border-white/10 text-xs md:text-sm text-gray-300">
+            <Activity size={14} className="text-blue-400" />
             <span>
               BMI: <strong>{plan._bmi}</strong>
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 text-sm text-gray-300">
-          <Dumbbell size={16} className="text-green-400" />
+        <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white/5 rounded-full border border-white/10 text-xs md:text-sm text-gray-300">
+          <Dumbbell size={14} className="text-green-400" />
           <span>
             Level: <strong>{userData?.level || "N/A"}</strong>
           </span>
         </div>
       </div>
 
-      {/* Global Actions */}
-      <div className="flex flex-wrap gap-3 justify-center">
+      {/* Global Actions - Responsive Grid/Flex */}
+      {/* On mobile: Grid 2 cols. On Desktop: Flex Row centered */}
+      <div className="grid grid-cols-2 sm:flex flex-wrap gap-3 justify-center">
         <button
           onClick={() => speakPlan("all")}
-          className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition flex items-center gap-2"
+          className="px-3 md:px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition flex items-center justify-center gap-2 text-sm"
         >
-          {speaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          {speaking ? <VolumeX size={16} /> : <Volume2 size={16} />}
           {speaking ? "Stop" : "Listen"}
         </button>
 
         <button
           onClick={exportPDF}
-          className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2"
+          className="px-3 md:px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center justify-center gap-2 text-sm"
         >
-          <Download size={18} /> PDF
+          <Download size={16} /> PDF
         </button>
 
         <button
           onClick={savePlan}
-          className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition flex items-center gap-2"
+          className="px-3 md:px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition flex items-center justify-center gap-2 text-sm"
         >
-          <Save size={18} /> Save
+          <Save size={16} /> Save
         </button>
 
         <button
           onClick={sharePlan}
-          className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition flex items-center gap-2"
+          className="px-3 md:px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition flex items-center justify-center gap-2 text-sm"
         >
-          <Share2 size={18} /> Share
+          <Share2 size={16} /> Share
         </button>
 
         {onRegenerate && (
           <button
             onClick={onRegenerate}
-            className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition flex items-center gap-2"
+            className="col-span-2 sm:col-span-1 px-3 md:px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition flex items-center justify-center gap-2 text-sm"
           >
-            <RefreshCw size={18} /> Retry
+            <RefreshCw size={16} /> Retry
           </button>
         )}
       </div>
 
-      {/* TABS NAVIGATION */}
-      <div className="flex justify-center gap-4 border-b border-white/10 pb-2 overflow-x-auto">
+      {/* TABS NAVIGATION - Horizontal Scroll enabled */}
+      <div className="flex justify-start sm:justify-center gap-2 md:gap-4 border-b border-white/10 pb-0 overflow-x-auto no-scrollbar snap-x">
         {[
           { id: "workout", label: "Workout", icon: Dumbbell },
           { id: "diet", label: "Diet & Macros", icon: Utensils },
@@ -389,13 +390,13 @@ export default function PlanDisplay({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl transition-all whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 md:px-6 py-3 rounded-t-xl transition-all whitespace-nowrap snap-start text-sm md:text-base shrink-0 ${
               activeTab === tab.id
                 ? "bg-white/10 text-white border-b-2 border-blue-500"
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
-            <tab.icon size={18} />
+            <tab.icon size={16} className="md:w-[18px] md:h-[18px]" />
             {tab.label}
           </button>
         ))}
@@ -417,13 +418,13 @@ export default function PlanDisplay({
                 plan.workout.map((day: any, i: number) => (
                   <div
                     key={i}
-                    className="glass-card p-6 rounded-2xl border border-white/5 bg-black/20"
+                    className="glass-card p-4 md:p-6 rounded-2xl border border-white/5 bg-black/20"
                   >
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-xl font-bold text-white">
+                    <div className="flex flex-wrap justify-between items-center mb-4 md:mb-6 gap-2">
+                      <h3 className="text-lg md:text-xl font-bold text-white">
                         {day.day}
                       </h3>
-                      <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
+                      <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs md:text-sm font-medium">
                         {day.focus}
                       </span>
                     </div>
@@ -431,26 +432,30 @@ export default function PlanDisplay({
                       {day.exercises?.map((ex: any, j: number) => (
                         <div
                           key={j}
-                          className={`p-4 rounded-xl transition-all flex items-center justify-between group ${
+                          // Mobile: Flex-Col (Stacked). Desktop: Flex-Row (Inline)
+                          className={`p-3 md:p-4 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group ${
                             completedExercises.has(ex.name)
                               ? "bg-green-900/20 border border-green-500/30"
                               : "bg-white/5 hover:bg-white/10"
                           }`}
                         >
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-start sm:items-center gap-3 md:gap-4 w-full">
                             <button
                               onClick={() => toggleExercise(ex.name)}
-                              className={`p-2 rounded-full transition-colors ${
+                              className={`p-1 rounded-full transition-colors mt-1 sm:mt-0 shrink-0 ${
                                 completedExercises.has(ex.name)
                                   ? "text-green-400"
                                   : "text-gray-600 hover:text-gray-400"
                               }`}
                             >
-                              <CheckCircle size={24} />
+                              <CheckCircle
+                                size={22}
+                                className="md:w-6 md:h-6"
+                              />
                             </button>
-                            <div>
+                            <div className="flex-1 min-w-0">
                               <p
-                                className={`font-medium ${
+                                className={`font-medium text-sm md:text-base truncate ${
                                   completedExercises.has(ex.name)
                                     ? "text-gray-500 line-through"
                                     : "text-white"
@@ -458,11 +463,13 @@ export default function PlanDisplay({
                               >
                                 {ex.name}
                               </p>
-                              <p className="text-sm text-gray-400">
+                              <p className="text-xs md:text-sm text-gray-400 mt-0.5">
                                 {ex.sets} sets × {ex.reps} reps • {ex.rest} rest
                               </p>
                             </div>
                           </div>
+
+                          {/* Demo Button: Visible by default on Mobile, Hover-only on Desktop */}
                           <button
                             onClick={() =>
                               generateImage(
@@ -470,10 +477,11 @@ export default function PlanDisplay({
                                 "exercise"
                               )
                             }
-                            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white/20 rounded-lg transition-all text-blue-400"
+                            className="w-full sm:w-auto p-2 bg-white/5 sm:bg-transparent rounded-lg text-blue-400 flex items-center justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all hover:bg-white/10"
                             title="Generate Demo Image"
                           >
-                            <ImageIcon size={20} />
+                            <ImageIcon size={18} />
+                            <span className="sm:hidden text-xs">Show Demo</span>
                           </button>
                         </div>
                       ))}
@@ -495,15 +503,15 @@ export default function PlanDisplay({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid md:grid-cols-3 gap-8"
+              className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8"
             >
               {/* Macro Chart Column */}
-              <div className="md:col-span-1 glass-card p-6 rounded-2xl bg-black/20 h-fit sticky top-4">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <div className="lg:col-span-1 glass-card p-4 md:p-6 rounded-2xl bg-black/20 h-fit lg:sticky lg:top-4 order-1 lg:order-1">
+                <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
                   <PieChartIcon size={20} className="text-blue-400" />
                   Macro Split
                 </h3>
-                <div className="h-[250px] w-full">
+                <div className="h-[220px] md:h-[250px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -527,20 +535,25 @@ export default function PlanDisplay({
                           backgroundColor: "#1a1a1a",
                           border: "1px solid #333",
                           borderRadius: "8px",
+                          fontSize: "12px",
                         }}
                         itemStyle={{ color: "#fff" }}
                       />
-                      <Legend verticalAlign="bottom" height={36} />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        wrapperStyle={{ fontSize: "12px" }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="mt-4 text-center border-t border-white/10 pt-4">
-                  <p className="text-sm text-gray-400 uppercase tracking-wider">
+                  <p className="text-xs md:text-sm text-gray-400 uppercase tracking-wider">
                     Daily Target
                   </p>
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-xl md:text-2xl font-bold text-white">
                     {plan.daily_calories}{" "}
-                    <span className="text-sm font-normal text-gray-500">
+                    <span className="text-xs md:text-sm font-normal text-gray-500">
                       kcal
                     </span>
                   </p>
@@ -548,16 +561,16 @@ export default function PlanDisplay({
               </div>
 
               {/* Meals Column */}
-              <div className="md:col-span-2 space-y-4">
+              <div className="lg:col-span-2 space-y-4 order-2 lg:order-2">
                 {hasDiet
                   ? Object.entries(plan.diet).map(
                       ([mealType, details]: [string, any]) => (
                         <div
                           key={mealType}
-                          className="glass-card p-5 rounded-2xl bg-white/5 flex gap-4 items-start hover:bg-white/10 transition-colors group relative overflow-hidden border border-white/5"
+                          className="glass-card p-4 md:p-5 rounded-2xl bg-white/5 flex gap-3 md:gap-4 items-start hover:bg-white/10 transition-colors group relative overflow-hidden border border-white/5"
                         >
                           <div
-                            className={`w-1.5 self-stretch rounded-full ${
+                            className={`w-1.5 self-stretch rounded-full shrink-0 ${
                               mealType === "breakfast"
                                 ? "bg-yellow-500"
                                 : mealType === "lunch"
@@ -567,9 +580,9 @@ export default function PlanDisplay({
                                 : "bg-purple-500"
                             }`}
                           ></div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
-                              <h4 className="capitalize text-gray-400 text-xs font-bold tracking-wider mb-1">
+                              <h4 className="capitalize text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">
                                 {mealType}
                               </h4>
                               <button
@@ -579,23 +592,23 @@ export default function PlanDisplay({
                                     "food"
                                   )
                                 }
-                                className="text-gray-500 hover:text-blue-400 transition-colors opacity-0 group-hover:opacity-100"
+                                className="text-gray-500 hover:text-blue-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                 title="See this meal"
                               >
-                                <ImageIcon size={18} />
+                                <ImageIcon size={16} />
                               </button>
                             </div>
-                            <h3 className="text-lg font-bold text-white mb-2">
+                            <h3 className="text-base md:text-lg font-bold text-white mb-2 wrap-break-words">
                               {details.meal}
                             </h3>
-                            <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-mono">
-                              <span className="bg-blue-500/20 border border-blue-500/30 px-2 py-1 rounded">
+                            <div className="flex flex-wrap gap-2 text-[10px] md:text-xs text-gray-300 font-mono">
+                              <span className="bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
                                 {details.protein} Protein
                               </span>
-                              <span className="bg-green-500/20 border border-green-500/30 px-2 py-1 rounded">
+                              <span className="bg-green-500/20 border border-green-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
                                 {details.carbs} Carbs
                               </span>
-                              <span className="bg-yellow-500/20 border border-yellow-500/30 px-2 py-1 rounded">
+                              <span className="bg-yellow-500/20 border border-yellow-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
                                 {details.fats} Fats
                               </span>
                             </div>
@@ -615,13 +628,13 @@ export default function PlanDisplay({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="glass-card p-8 rounded-2xl bg-black/20 max-w-2xl mx-auto border border-white/10"
+              className="glass-card p-4 md:p-8 rounded-2xl bg-black/20 max-w-2xl mx-auto border border-white/10"
             >
-              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+              <h3 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 flex items-center gap-3">
                 <ShoppingBag className="text-green-400" />
                 Grocery List
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {shoppingList.length > 0 ? (
                   shoppingList.map((item: string, i: number) => (
                     <div
@@ -630,9 +643,11 @@ export default function PlanDisplay({
                     >
                       <input
                         type="checkbox"
-                        className="w-5 h-5 rounded border-gray-600 text-green-500 focus:ring-green-500 bg-transparent cursor-pointer"
+                        className="w-5 h-5 rounded border-gray-600 text-green-500 focus:ring-green-500 bg-transparent cursor-pointer shrink-0"
                       />
-                      <span className="text-gray-300 text-lg">{item}</span>
+                      <span className="text-gray-300 text-base md:text-lg">
+                        {item}
+                      </span>
                     </div>
                   ))
                 ) : (
@@ -645,7 +660,7 @@ export default function PlanDisplay({
                 onClick={() =>
                   navigator.clipboard.writeText(shoppingList.join("\n"))
                 }
-                className="w-full mt-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium transition-colors text-gray-300"
+                className="w-full mt-6 md:mt-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium transition-colors text-gray-300"
               >
                 Copy List to Clipboard
               </button>
@@ -654,7 +669,7 @@ export default function PlanDisplay({
         </AnimatePresence>
       </div>
 
-      {/* Image Modal */}
+      {/* Image Modal - Responsive Sizing */}
       {imageModalData && (
         <div
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
@@ -663,26 +678,26 @@ export default function PlanDisplay({
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-[#1a1a1a] p-4 rounded-2xl max-w-lg w-full border border-white/10 shadow-2xl relative"
+            className="bg-[#1a1a1a] p-4 rounded-2xl w-full max-w-md md:max-w-lg border border-white/10 shadow-2xl relative mx-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setImageModalData(null)}
-              className="absolute top-4 right-4 p-2 bg-black/50 rounded-full hover:bg-red-500/20 text-white transition z-10"
+              className="absolute top-3 right-3 md:top-4 md:right-4 p-1.5 md:p-2 bg-black/50 rounded-full hover:bg-red-500/20 text-white transition z-10"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
-            <h3 className="text-xl font-bold mb-4 text-white pr-10">
+            <h3 className="text-lg md:text-xl font-bold mb-4 text-white pr-8">
               {imageModalData.type === "exercise"
                 ? "Workout Demo"
                 : "Meal Idea"}
             </h3>
 
             {generatingImage ? (
-              <div className="h-64 flex flex-col items-center justify-center gap-4 bg-white/5 rounded-xl">
-                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-500"></div>
-                <p className="text-gray-400 animate-pulse">
+              <div className="h-48 md:h-64 flex flex-col items-center justify-center gap-4 bg-white/5 rounded-xl">
+                <div className="animate-spin rounded-full h-8 w-8 md:h-10 md:w-10 border-t-2 border-blue-500"></div>
+                <p className="text-gray-400 animate-pulse text-sm md:text-base">
                   Generating AI Image...
                 </p>
               </div>
@@ -696,13 +711,13 @@ export default function PlanDisplay({
                 <a
                   href={imageModalData.image}
                   download="fitness-ai-image.png"
-                  className="absolute bottom-4 right-4 p-2 bg-black/70 text-white rounded-lg opacity-0 group-hover:opacity-100 transition"
+                  className="absolute bottom-3 right-3 md:bottom-4 md:right-4 p-2 bg-black/70 text-white rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition"
                 >
-                  <Download size={20} />
+                  <Download size={18} />
                 </a>
               </div>
             ) : (
-              <p className="p-8 text-center text-red-400 bg-red-500/10 rounded-xl">
+              <p className="p-6 md:p-8 text-center text-red-400 bg-red-500/10 rounded-xl text-sm">
                 Failed to generate image. Please check API keys.
               </p>
             )}
@@ -711,7 +726,7 @@ export default function PlanDisplay({
       )}
 
       {/* Medical Disclaimer Footer */}
-      <div className="text-center mt-12 pt-8 border-t border-white/5 text-xs text-gray-500">
+      <div className="text-center mt-8 md:mt-12 pt-6 md:pt-8 border-t border-white/5 text-[10px] md:text-xs text-gray-500 px-4">
         <p>
           ⚠️ <strong>Disclaimer:</strong> This is an AI-generated plan. Please
           consult a healthcare professional before starting any new exercise or
@@ -722,7 +737,7 @@ export default function PlanDisplay({
       {/* Reset Button */}
       <button
         onClick={reset}
-        className="text-gray-500 hover:text-white transition-colors text-sm w-full text-center mt-6 flex items-center justify-center gap-2 group pb-4"
+        className="text-gray-500 hover:text-white transition-colors text-xs md:text-sm w-full text-center mt-4 flex items-center justify-center gap-2 group pb-4"
       >
         <span>← Start Over</span>
       </button>

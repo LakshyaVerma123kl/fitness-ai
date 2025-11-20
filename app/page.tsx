@@ -77,34 +77,38 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 md:p-12 relative overflow-hidden transition-colors duration-300">
-      {/* Background Gradient Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-[#6366f1]/20 rounded-full blur-[100px]" />
+    <main className="min-h-screen flex flex-col items-center justify-center p-3 sm:p-6 md:p-8 lg:p-12 relative overflow-hidden transition-colors duration-300">
+      {/* Background Gradient Blobs - Responsive sizes */}
+      <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] lg:w-[500px] lg:h-[500px] bg-primary/20 rounded-full blur-[80px] sm:blur-[100px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] lg:w-[400px] lg:h-[400px] bg-[#6366f1]/20 rounded-full blur-[80px] sm:blur-[100px]" />
 
-      {/* Dark Mode Toggle */}
+      {/* Dark Mode Toggle - Responsive positioning */}
       <button
         onClick={() => setDarkMode(!darkMode)}
-        className="fixed top-6 right-6 z-50 p-3 glass-card rounded-full hover:scale-110 transition-transform"
+        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2.5 sm:p-3 glass-card rounded-full hover:scale-110 transition-transform shadow-lg"
         aria-label="Toggle dark mode"
       >
         {darkMode ? (
-          <Sun className="text-primary" size={24} />
+          <Sun className="text-primary" size={20} />
         ) : (
-          <Moon className="text-accent" size={24} />
+          <Moon className="text-accent" size={20} />
         )}
       </button>
 
       <div className="z-10 w-full max-w-5xl">
-        <header className="mb-12 text-center">
-          <h1 className="text-5xl md:text-7xl font-black mb-2 tracking-tighter">
+        {/* Header - Responsive text sizes */}
+        <header className="mb-8 sm:mb-10 md:mb-12 text-center px-2">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-2 tracking-tighter leading-tight">
             FITNESS<span className="text-primary">AI</span>
           </h1>
-          <p className="text-gray-400">Your AI-Powered Personal Trainer</p>
+          <p className="text-sm sm:text-base text-gray-400">
+            Your AI-Powered Personal Trainer
+          </p>
         </header>
 
+        {/* Error Message - Responsive */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-center max-w-md mx-auto">
+          <div className="mb-6 p-3 sm:p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-center max-w-md mx-auto text-sm sm:text-base">
             ⚠️ {error}
           </div>
         )}
