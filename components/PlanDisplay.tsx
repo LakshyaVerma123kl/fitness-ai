@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -24,6 +24,7 @@ import {
   Zap,
   Youtube,
   ChefHat,
+  ArrowUpCircle, // Icon for progression
 } from "lucide-react";
 import {
   PieChart,
@@ -35,10 +36,8 @@ import {
 } from "recharts";
 import Toast from "./Toast";
 import { useAuth } from "@clerk/nextjs";
-// 🎨 Chart Colors
-const COLORS = ["#3b82f6", "#10b981", "#eab308"]; // Protein (Blue), Carbs (Green), Fats (Yellow)
 
-// 🍽️ Meal Sequence
+const COLORS = ["#3b82f6", "#10b981", "#eab308"];
 const MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"];
 
 export default function PlanDisplay({
@@ -49,7 +48,7 @@ export default function PlanDisplay({
 }: {
   plan: any;
   reset: any;
-  onRegenerate?: any;
+  onRegenerate?: (adaptive: boolean) => void; // Updated type
   userData?: any;
 }) {
   const [speaking, setSpeaking] = useState(false);
@@ -68,16 +67,34 @@ export default function PlanDisplay({
     type: "success" | "error" | "warning";
   } | null>(null);
 
+  // 🛑 Stop speech when component unmounts (navigating away)
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
   if (!plan) return null;
 
   const hasWorkout = plan.workout && Array.isArray(plan.workout);
   const hasDiet = plan.diet && typeof plan.diet === "object";
 
-  // 📊 Calculate Macros for Chart
+  // Calculate total exercises vs completed
+  const totalExercises = useMemo(() => {
+    if (!hasWorkout) return 0;
+    return plan.workout.reduce(
+      (acc: number, day: any) => acc + (day.exercises?.length || 0),
+      0
+    );
+  }, [plan.workout]);
+
+  const progressPercentage = Math.round(
+    (completedExercises.size / (totalExercises || 1)) * 100
+  );
+
+  // ... (Macro and Shopping List calculations remain the same) ...
   const macroData = useMemo(() => {
     if (!hasDiet) return [];
-
-    // Priority: Use explicit macros from API if available
     if (plan.diet.macros) {
       return [
         { name: "Protein", value: parseInt(plan.diet.macros.protein) || 0 },
@@ -85,8 +102,6 @@ export default function PlanDisplay({
         { name: "Fats", value: parseInt(plan.diet.macros.fats) || 0 },
       ];
     }
-
-    // Fallback: Sum up meals
     let p = 0,
       c = 0,
       f = 0;
@@ -98,7 +113,6 @@ export default function PlanDisplay({
         f += parseInt(meal.fats) || 0;
       });
     }
-
     return [
       { name: "Protein", value: p },
       { name: "Carbs", value: c },
@@ -106,25 +120,19 @@ export default function PlanDisplay({
     ];
   }, [plan.diet]);
 
-  // 🛒 Generate Shopping List
   const shoppingList = useMemo(() => {
     if (!hasDiet) return [];
     const items: string[] = [];
-
     const mealsSource = plan.diet.meals || plan.diet;
-
     Object.values(mealsSource).forEach((meal: any) => {
       if (meal.portion) items.push(meal.portion);
     });
-
     if (plan.supplements && Array.isArray(plan.supplements)) {
       plan.supplements.forEach((s: string) => items.push(`Supplement: ${s}`));
     }
-
     return items;
   }, [plan.diet, plan.supplements]);
 
-  // ✅ Toggle Exercise Checkbox
   const toggleExercise = (name: string) => {
     const newSet = new Set(completedExercises);
     if (newSet.has(name)) newSet.delete(name);
@@ -132,18 +140,15 @@ export default function PlanDisplay({
     setCompletedExercises(newSet);
   };
 
-  // 🔊 FUNCTION: Speak Plan (Mobile Optimized)
   const speakPlan = (section: "workout" | "diet" | "all") => {
     if (speaking) {
       window.speechSynthesis.cancel();
       setSpeaking(false);
       return;
     }
-
     setSpeaking(true);
     let fullText = "";
-
-    // 1. Build the text (Same as before)
+    // ... (Speech generation logic same as before) ...
     if (section === "workout" || section === "all") {
       fullText += "Here is your Workout Plan. ";
       if (hasWorkout) {
@@ -155,7 +160,6 @@ export default function PlanDisplay({
         });
       }
     }
-
     if (section === "diet" || section === "all") {
       fullText += "Here is your Diet Plan. ";
       const mealsSource = plan.diet.meals || plan.diet;
@@ -169,24 +173,19 @@ export default function PlanDisplay({
       }
     }
 
-    // 2. 📱 MOBILE FIX: Split text into chunks
     const chunks = fullText.match(/[^.!?]+[.!?]+/g) || [fullText];
-
     chunks.forEach((chunk, index) => {
       const utterance = new SpeechSynthesisUtterance(chunk.trim());
       utterance.rate = 1;
       utterance.pitch = 1;
-
-      // Stop speaking state only after the LAST chunk finishes
       if (index === chunks.length - 1) {
         utterance.onend = () => setSpeaking(false);
       }
-
       window.speechSynthesis.speak(utterance);
     });
   };
 
-  // 🎨 FUNCTION: Generate Image
+  // ... (generateImage, exportPDF, savePlan, sharePlan remain the same) ...
   const generateImage = async (prompt: string, type: string) => {
     setGeneratingImage(true);
     setImageModalData({ prompt, type, image: null });
@@ -209,7 +208,6 @@ export default function PlanDisplay({
     }
   };
 
-  // 📄 FUNCTION: Export Professional PDF
   const exportPDF = () => {
     const doc = new jsPDF();
     const margin = 14;
@@ -217,7 +215,7 @@ export default function PlanDisplay({
     doc.setFontSize(22);
     doc.setTextColor(40, 40, 40);
     doc.text("Your Personalized Fitness Plan", margin, 20);
-
+    // ... (rest of PDF logic) ...
     doc.setFontSize(12);
     doc.setTextColor(100, 100, 100);
     doc.text(
@@ -228,7 +226,6 @@ export default function PlanDisplay({
 
     let yPos = 45;
 
-    // Timeline
     if (plan.results_timeline) {
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
@@ -253,7 +250,6 @@ export default function PlanDisplay({
       yPos += 10;
     }
 
-    // Table: Workout
     if (hasWorkout) {
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
@@ -280,7 +276,6 @@ export default function PlanDisplay({
       yPos = (doc as any).lastAutoTable.finalY + 15;
     }
 
-    // Table: Diet
     if (hasDiet) {
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
@@ -300,16 +295,16 @@ export default function PlanDisplay({
 
       const mealsSource = plan.diet.meals || plan.diet;
 
-      // Use MEAL_ORDER to sort for PDF too
-      const dietRows = MEAL_ORDER.filter((key) => mealsSource[key]) // Filter out if meal doesn't exist
-        .map((mealType) => {
+      const dietRows = MEAL_ORDER.filter((key) => mealsSource[key]).map(
+        (mealType) => {
           const details = mealsSource[mealType];
           return [
             mealType.toUpperCase(),
             details.meal,
             `${details.calories} kcal\nP:${details.protein} C:${details.carbs} F:${details.fats}`,
           ];
-        });
+        }
+      );
 
       autoTable(doc, {
         startY: yPos,
@@ -323,7 +318,6 @@ export default function PlanDisplay({
       yPos = (doc as any).lastAutoTable.finalY + 15;
     }
 
-    // List: Shopping
     if (shoppingList.length > 0) {
       if (yPos > 250) {
         doc.addPage();
@@ -356,17 +350,14 @@ export default function PlanDisplay({
     doc.save("Fitness_Plan_Pro.pdf");
   };
 
-  // 💾 FUNCTION: Save Plan (Toast Version)
-  // 💾 FUNCTION: Save Plan (Toast Version)
   const savePlan = async () => {
-    // 1. Check if user is signed in immediately
     if (!isSignedIn) {
       setToast({
         show: true,
         message: "⚠️ Please Sign In to save your plan!",
         type: "warning",
       });
-      return; // Stop execution here
+      return;
     }
 
     try {
@@ -378,7 +369,6 @@ export default function PlanDisplay({
 
       const data = await res.json();
 
-      // 2. Backup check (in case session expired while on page)
       if (res.status === 401) {
         setToast({
           show: true,
@@ -407,7 +397,6 @@ export default function PlanDisplay({
     }
   };
 
-  // 📤 FUNCTION: Share on WhatsApp
   const sharePlan = () => {
     const text = `Check out my AI Fitness Plan! Goal: ${userData?.goal}. \n\nQuote: "${plan.motivation_quote}"\n\nGenerated by Fitness AI.`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -425,9 +414,9 @@ export default function PlanDisplay({
           animate={{ scale: 1, opacity: 1 }}
           className="text-center mt-4"
         >
-          <div className="glass-card inline-block px-6 py-5 md:px-8 md:py-6 rounded-2xl border border-(--color-primary) border-opacity-30 bg-linear-to-r from-purple-900/10 to-blue-900/10 w-full md:w-auto">
+          <div className="glass-card inline-block px-6 py-5 md:px-8 md:py-6 rounded-2xl border border-[var(--color-primary)] border-opacity-30 bg-gradient-to-r from-purple-900/10 to-blue-900/10 w-full md:w-auto">
             <Sparkles className="inline-block text-yellow-400 mb-3" size={24} />
-            <p className="text-(--color-text) text-lg md:text-xl italic font-light">
+            <p className="text-[var(--color-text)] text-lg md:text-xl italic font-light">
               "{plan.motivation_quote}"
             </p>
           </div>
@@ -436,24 +425,27 @@ export default function PlanDisplay({
 
       {/* User Stats Badges */}
       <div className="flex flex-wrap justify-center gap-3 md:gap-4">
+        {/* ... BMI and Level badges ... */}
         {plan._bmi && (
-          <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-(--color-card) rounded-full border border-(--color-border)] text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
+          <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
             <Activity size={14} className="text-blue-400" />
             <span>
               BMI: <strong>{plan._bmi}</strong>
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-(--color-card) rounded-full border border-(--color-border) text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
+        <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
           <Dumbbell size={14} className="text-green-400" />
           <span>
             Level: <strong>{userData?.level || "N/A"}</strong>
           </span>
         </div>
       </div>
+
       {/* 📅 Results Timeline Section */}
       {plan.results_timeline && (
         <div className="glass-card p-5 md:p-6 rounded-2xl border border-[var(--color-border)]">
+          {/* ... Timeline content ... */}
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             <div className="shrink-0 flex items-center gap-3 md:w-1/4">
               <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400">
@@ -505,8 +497,37 @@ export default function PlanDisplay({
           </div>
         </div>
       )}
+
+      {/* ADAPTIVE PLAN NOTIFICATION (If progress is good) */}
+      {progressPercentage >= 80 && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-[var(--color-primary)]/20 to-blue-500/20 border border-[var(--color-primary)] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[var(--color-primary)] rounded-full text-black">
+              <ArrowUpCircle size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-[var(--color-text)]">
+                Crushing it!
+              </h4>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                You've completed {progressPercentage}% of this plan.
+              </p>
+            </div>
+          </div>
+          {onRegenerate && (
+            <button
+              onClick={() => onRegenerate(true)} // Call with adaptive=true
+              className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-black text-xs font-bold rounded-lg transition"
+            >
+              Level Up Plan 🚀
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Global Actions */}
       <div className="grid grid-cols-2 sm:flex flex-wrap gap-3 justify-center">
+        {/* ... Actions Buttons ... */}
         <button
           onClick={() => speakPlan("all")}
           className="px-3 md:px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition flex items-center justify-center gap-2 text-sm"
@@ -538,13 +559,14 @@ export default function PlanDisplay({
 
         {onRegenerate && (
           <button
-            onClick={onRegenerate}
+            onClick={() => onRegenerate(false)} // Regular regenerate
             className="col-span-2 sm:col-span-1 px-3 md:px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition flex items-center justify-center gap-2 text-sm"
           >
             <RefreshCw size={16} /> Retry
           </button>
         )}
       </div>
+
       {/* TABS NAVIGATION */}
       <div className="flex justify-start sm:justify-center gap-2 md:gap-4 border-b border-[var(--color-border)] pb-0 overflow-x-auto no-scrollbar snap-x">
         {[
@@ -566,6 +588,7 @@ export default function PlanDisplay({
           </button>
         ))}
       </div>
+
       {/* CONTENT AREA */}
       <div className="min-h-[400px]">
         <AnimatePresence mode="wait">
@@ -578,6 +601,7 @@ export default function PlanDisplay({
               exit={{ opacity: 0, y: -20 }}
               className="grid gap-6"
             >
+              {/* ... Workout content (Same as before) ... */}
               {hasWorkout ? (
                 plan.workout.map((day: any, i: number) => (
                   <div
@@ -681,6 +705,7 @@ export default function PlanDisplay({
               exit={{ opacity: 0, y: -20 }}
               className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8"
             >
+              {/* ... Diet content (Same as before) ... */}
               {/* Diet Strategies & Supplements */}
               <div className="lg:col-span-3 grid md:grid-cols-2 gap-4">
                 {/* Weekly Strategies */}
@@ -722,9 +747,7 @@ export default function PlanDisplay({
                       {plan.supplements.map((item: string, i: number) => (
                         <span
                           key={i}
-                          // Changed bg-opacity-10 to bg-opacity-5
-                          // Changed border-opacity-20 to border-opacity-10
-                          className="px-3 py-1 rounded-full bg-[var(--color-green-700)] bg-opacity-5 border border-[var(--color-green-750)] border-opacity-10 text-xs "
+                          className="px-3 py-1 rounded-full bg-[var(--color-green-650)] bg-opacity-10 border border-[var(--color-green-700)] border-opacity-20 text-xs text-[var(--color-text-secondary)]"
                         >
                           {item}
                         </span>
@@ -882,6 +905,7 @@ export default function PlanDisplay({
               exit={{ opacity: 0, y: -20 }}
               className="glass-card p-4 md:p-8 rounded-2xl border border-[var(--color-border)] max-w-2xl mx-auto"
             >
+              {/* ... Shopping list content (Same as before) ... */}
               <h3 className="text-xl md:text-2xl font-bold text-[var(--color-text)] mb-4 md:mb-6 flex items-center gap-3">
                 <ShoppingBag className="text-green-400" />
                 Grocery List
@@ -891,15 +915,13 @@ export default function PlanDisplay({
                   shoppingList.map((item: string, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 p-3 border-b border-[var(--color-green-700)] last:border-0 hover:bg-[var(--color-green-750)] hover:bg-opacity-5 transition rounded-lg"
+                      className="flex items-center gap-3 p-3 border-b border-[var(--color-green-650)] last:border-0  hover:bg-opacity-5 transition rounded-lg"
                     >
                       <input
                         type="checkbox"
-                        // Changed text-green-500 to text-green-500/50 (50% opacity)
-                        // Changed focus:ring-green-500 to focus:ring-green-500/50
-                        className="w-5 h-5 rounded border-gray-400 text-green-900/50 focus:ring-green-900/50 bg-transparent cursor-pointer shrink-0"
+                        className="w-5 h-5 rounded border-gray-400 text-green-500 focus:ring-green-500 bg-transparent cursor-pointer shrink-0"
                       />
-                      <span className="text-[var(--color-text-secondary)] text-base md:text-lg ">
+                      <span className="text-[var(--color-text-secondary)] text-base md:text-lg">
                         {item}
                       </span>
                     </div>
@@ -922,7 +944,8 @@ export default function PlanDisplay({
           )}
         </AnimatePresence>
       </div>
-      {/* Image Modal */}
+
+      {/* Image Modal (Same as before) */}
       {imageModalData && (
         <div
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
@@ -977,6 +1000,7 @@ export default function PlanDisplay({
           </motion.div>
         </div>
       )}
+
       {/* Medical Disclaimer Footer */}
       <div className="text-center mt-8 md:mt-12 pt-6 md:pt-8 border-t border-[var(--color-border)] text-[10px] md:text-xs text-[var(--color-text-secondary)] px-4">
         <p>
@@ -985,6 +1009,7 @@ export default function PlanDisplay({
           diet program.
         </p>
       </div>
+
       {/* Reset Button */}
       <button
         onClick={reset}
@@ -992,6 +1017,7 @@ export default function PlanDisplay({
       >
         <span>← Start Over</span>
       </button>
+
       {/* Toast Notification */}
       {toast?.show && (
         <Toast

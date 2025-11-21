@@ -90,3 +90,34 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing plan ID" }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from("fitness_plans")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId); // Ensure user only deletes their own plan
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting plan:", error);
+    return NextResponse.json(
+      { error: "Failed to delete plan" },
+      { status: 500 }
+    );
+  }
+}

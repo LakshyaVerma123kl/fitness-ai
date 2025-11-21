@@ -13,7 +13,7 @@ export default function Home() {
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<any>(null); // Changed to any for flexibility
   const [mounted, setMounted] = useState(false);
 
   // Fix hydration error by waiting for client-side mount
@@ -24,49 +24,89 @@ export default function Home() {
   const handleGenerate = async (formData: any) => {
     setLoading(true);
     setError("");
-    setUserData(formData);
+    setUserData(formData); // Store user data so we can save it later
+
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error("Failed to generate");
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to generate plan");
+      }
+
       const data = await res.json();
+      if (!data.workout || !data.diet) {
+        throw new Error("Invalid plan structure received");
+      }
+
       setPlan(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error: any) {
+      console.error("❌ Error:", error);
+      setError(error.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Modified Regenerate function to handle adaptive updates
+  const handleRegenerate = (adaptive: boolean = false) => {
+    if (!userData) return;
+
+    setPlan(null); // Clear current plan to show loading state
+
+    // If adaptive update is requested (user made progress),
+    // we simulate a 'level up' by modifying the input data
+    let nextUserData = { ...userData };
+
+    if (adaptive) {
+      // Logic to "level up" the user request
+      if (userData.level === "Beginner") nextUserData.level = "Intermediate";
+      else if (userData.level === "Intermediate")
+        nextUserData.level = "Advanced";
+
+      // You could also add a note to the prompt implicitly
+      // The API endpoint could handle a new field "adaptive_mode": true
+    }
+
+    // Update local state with new 'level' if changed
+    setUserData(nextUserData);
+
+    // Call generation with the (potentially updated) data
+    setTimeout(() => handleGenerate(nextUserData), 100);
+  };
+
+  // Prevent hydration mismatch by not rendering theme toggles until mounted
+  if (!mounted) return null;
+
   return (
-    <main className="min-h-screen flex flex-col items-center relative bg-(--color-dark) text-(--color-text) transition-colors">
+    <main className="min-h-screen flex flex-col items-center relative bg-[var(--color-dark)] text-[var(--color-text)] transition-colors duration-300">
       {/* Navbar */}
       <nav className="w-full max-w-6xl px-6 py-6 flex justify-between items-center z-50">
-        <h1 className="text-2xl font-black tracking-tighter text--color-text">
-          FITNESS<span className="text-[#00e599]">AI</span>
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-black tracking-tighter">
+            FITNESS<span className="text-[#00e599]">AI</span>
+          </h1>
+        </div>
+
         <div className="flex items-center gap-4">
-          {/* Theme Toggle - Only render after mount to prevent hydration error */}
-          {mounted && (
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-black/5 rounded-full transition"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <Sun className="text-[#00e599]" size={20} />
-              ) : (
-                <Moon className="text-[#00e599]" size={20} />
-              )}
-            </button>
-          )}
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="p-2 hover:bg-white/10 rounded-full transition"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="text-[#00e599]" size={20} />
+            ) : (
+              <Moon className="text-gray-600" size={20} />
+            )}
+          </button>
 
-          {/* If not mounted yet, show a placeholder to prevent layout shift */}
-          {!mounted && <div className="w-9 h-9" />}
-
+          {/* Auth Buttons */}
           <SignedOut>
             <Link href="/sign-in">
               <button className="px-4 py-2 text-sm font-medium hover:text-[#00e599] transition">
@@ -74,14 +114,15 @@ export default function Home() {
               </button>
             </Link>
             <Link href="/sign-up">
-              <button className="px-4 py-2 bg-[#00e599] text-black text-sm font-bold rounded-lg hover:bg-[#00cc88] transition">
+              <button className="px-4 py-2 bg-[#00e599] text-black text-sm font-bold rounded-lg hover:bg-[#00cc88] transition shadow-lg shadow-green-500/20">
                 Get Started
               </button>
             </Link>
           </SignedOut>
+
           <SignedIn>
             <Link href="/dashboard">
-              <button className="px-4 py-2 bg-white/10 dark:bg-white/10 bg-black/5 rounded-lg text-sm font-medium hover:bg-white/20 dark:hover:bg-white/20 hover:bg-black/10 mr-4 flex items-center gap-2 transition">
+              <button className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 mr-4 flex items-center gap-2 transition">
                 <LayoutDashboard size={16} /> Dashboard
               </button>
             </Link>
@@ -94,17 +135,17 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Content */}
+      {/* Content Area */}
       <div className="z-10 w-full max-w-5xl px-4 py-10">
         {!plan && (
           <header className="mb-12 text-center">
-            <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter text-(--color-text)">
+            <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter">
               YOUR AI{" "}
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-[#00e599] to-blue-500">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00e599] to-blue-500">
                 TRAINER
               </span>
             </h1>
-            <p className="text-lg text-(--color-text-secondary)">
+            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
               Generate personalized workout & diet plans in seconds.
             </p>
           </header>
@@ -112,18 +153,23 @@ export default function Home() {
 
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-center">
-            {error}
+            ⚠️ {error}
           </div>
         )}
 
         {!plan ? (
-          <FitnessForm onSubmit={handleGenerate} isLoading={loading} />
+          <div className="w-full max-w-2xl mx-auto">
+            <FitnessForm onSubmit={handleGenerate} isLoading={loading} />
+          </div>
         ) : (
           <PlanDisplay
             plan={plan}
-            reset={() => setPlan(null)}
+            reset={() => {
+              setPlan(null);
+              setUserData(null);
+            }}
+            onRegenerate={handleRegenerate} // Pass the new function
             userData={userData}
-            onRegenerate={() => handleGenerate(userData)}
           />
         )}
       </div>
