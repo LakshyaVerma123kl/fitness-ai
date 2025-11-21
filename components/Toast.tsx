@@ -46,15 +46,15 @@ export default function Toast({
       <div className="flex items-center gap-4 p-4 pr-12">
         <div className="shrink-0">{icons[type]}</div>
         <div className="flex-1">
-          <p className="text-white font-medium text-sm md:text-base">
+          <p className="text-[var(--color-text)] font-medium text-sm md:text-base">
             {message}
           </p>
         </div>
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 p-1 hover:bg-white/10 rounded-full transition-colors"
+          className="absolute top-3 right-3 p-1 hover:bg-[var(--color-text)]/10 rounded-full transition-colors"
         >
-          <X size={18} className="text-gray-400" />
+          <X size={18} className="text-[var(--color-text-secondary)]" />
         </button>
       </div>
       {/* Progress bar */}

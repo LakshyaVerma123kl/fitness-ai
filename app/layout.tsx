@@ -7,7 +7,7 @@ import { ThemeProvider } from "../components/ThemeProvider";
 export const metadata: Metadata = {
   title: "FitnessAI - Your AI Personal Trainer",
   description: "AI-powered personalized fitness and diet plans",
-  manifest: "/manifest.json", // Link to the manifest
+
   icons: {
     apple: "/icon-192x192.png", // iOS Icon
   },

@@ -31,7 +31,7 @@ import {
 import { useUser } from "@clerk/nextjs";
 import html2canvas from "html2canvas";
 import Toast from "./Toast";
-
+import domtoimage from "dom-to-image-more";
 interface ProgressEntry {
   date: string;
   weight: number | null;
@@ -151,24 +151,36 @@ export default function ProgressTracker({
   }, [entries]);
 
   // Download PNG Handler
+  // Replace the handleDownloadImage function in your ProgressTracker.tsx with this:
   const handleDownloadImage = async () => {
     if (!cardRef.current) return;
     try {
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: "#0a0a0a", // Ensure dark background
-        scale: 2, // Higher quality
+      // @ts-ignore
+      const dataUrl = await domtoimage.toPng(cardRef.current, {
+        quality: 1,
+        bgcolor: "#000000",
+        scale: 3,
       });
+
       const link = document.createElement("a");
-      link.download = `fitness-progress-${new Date().toISOString()}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = `fitness-progress-${
+        new Date().toISOString().split("T")[0]
+      }.png`;
+      link.href = dataUrl;
       link.click();
+
       setToast({
         show: true,
         message: "📸 Image downloaded!",
         type: "success",
       });
     } catch (err) {
-      setToast({ show: true, message: "Failed to download", type: "error" });
+      console.error("Download error:", err);
+      setToast({
+        show: true,
+        message: "Failed to download image",
+        type: "error",
+      });
     }
   };
 
@@ -425,7 +437,7 @@ export default function ProgressTracker({
           <div className="bg-[var(--color-card)] p-6 rounded-2xl w-full max-w-md border border-[var(--color-border)] relative shadow-2xl">
             <button
               onClick={() => setShowShareModal(false)}
-              className="absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition"
+              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full transition z-10"
             >
               <X size={20} className="text-white" />
             </button>
