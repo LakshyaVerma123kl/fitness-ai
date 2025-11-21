@@ -33,6 +33,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import Toast from "./Toast";
 
 // 🎨 Chart Colors
 const COLORS = ["#3b82f6", "#10b981", "#eab308"]; // Protein (Blue), Carbs (Green), Fats (Yellow)
@@ -57,6 +58,11 @@ export default function PlanDisplay({
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
     new Set()
   );
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error" | "warning";
+  } | null>(null);
 
   if (!plan) return null;
 
@@ -330,21 +336,42 @@ export default function PlanDisplay({
     doc.save("Fitness_Plan_Pro.pdf");
   };
 
-  // 💾 FUNCTION: Save Plan
-  const savePlan = () => {
+  // 💾 FUNCTION: Save Plan (Toast Version)
+  const savePlan = async () => {
     try {
-      const saved = JSON.parse(localStorage.getItem("fitnessPlans") || "[]");
-      const newPlan = {
-        id: Date.now(),
-        plan,
-        userData,
-        createdAt: new Date().toISOString(),
-      };
-      saved.push(newPlan);
-      localStorage.setItem("fitnessPlans", JSON.stringify(saved));
-      alert("✅ Plan saved to your history!");
-    } catch (e) {
-      alert("❌ Failed to save plan.");
+      const res = await fetch("/api/plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, userData }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 401) {
+        setToast({
+          show: true,
+          message: "⚠️ Please Sign In to save your plan!",
+          type: "warning",
+        });
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save");
+      }
+
+      setToast({
+        show: true,
+        message: "✅ Plan saved to your Dashboard!",
+        type: "success",
+      });
+    } catch (e: any) {
+      console.error("Full Error Object:", e);
+      setToast({
+        show: true,
+        message: `❌ Error: ${e.message}`,
+        type: "error",
+      });
     }
   };
 
@@ -931,6 +958,16 @@ export default function PlanDisplay({
       >
         <span>← Start Over</span>
       </button>
+
+      {/* Toast Notification */}
+      {toast?.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+          duration={4000}
+        />
+      )}
     </div>
   );
 }

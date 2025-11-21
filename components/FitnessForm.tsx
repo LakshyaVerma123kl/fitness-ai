@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2, ChevronRight, User, Heart } from "lucide-react";
+import Toast from "./Toast";
 
 interface FitnessFormProps {
   onSubmit: (data: any) => void;
@@ -23,6 +24,12 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
     stressLevel: "Medium",
   });
 
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error" | "warning";
+  } | null>(null);
+
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -34,7 +41,11 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
       !formData.weight ||
       !formData.height
     ) {
-      alert("⚠️ Please fill in Name, Age, Weight, and Height");
+      setToast({
+        show: true,
+        message: "⚠️ Please fill in Name, Age, Weight, and Height",
+        type: "warning",
+      });
       return;
     }
     onSubmit(formData);
@@ -44,7 +55,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card w-full max-w-2xl p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl mx-auto"
+      className="glass-card w-full max-w-2xl p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl mx-auto relative"
     >
       {/* Header - Responsive */}
       <div className="flex items-center justify-center gap-2 sm:gap-3 mb-5 sm:mb-6">
@@ -254,6 +265,16 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             </>
           )}
         </button>
+
+        {/* Toast Notification */}
+        {toast?.show && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+            duration={3000}
+          />
+        )}
       </div>
     </motion.div>
   );

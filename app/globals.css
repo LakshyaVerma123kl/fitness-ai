@@ -7,28 +7,31 @@
 :root {
   --color-primary: #00e599;
   --color-primary-dark: #00cc88;
+  --color-dark: #f9fafb;
+  --color-card: #ffffff;
+  --color-text: #111827;
+  --color-text-secondary: #6b7280;
+  --color-border: #e5e7eb;
+}
 
-  /* Dark mode defaults */
+.dark {
+  --color-primary: #00e599;
+  --color-primary-dark: #00cc88;
   --color-dark: #0a0a0a;
   --color-card: #171717;
   --color-text: #ffffff;
-  --color-text-secondary: #9ca3af; /* Gray-400 */
+  --color-text-secondary: #9ca3af;
   --color-border: rgba(255, 255, 255, 0.1);
 }
 
 /* ===========================================
-   LIGHT MODE – IMPROVED VISIBILITY
+   BASE STYLES
 =========================================== */
 
-:root:not(.dark) {
-  --color-dark: #f0f2f5; /* Light Gray Background */
-  --color-card: #ffffff; /* Pure White Card */
-  --color-text: #1f2937; /* Gray-800 (High Contrast) */
-  --color-text-secondary: #4b5563; /* Gray-600 */
-  --color-border: #e5e7eb; /* Light Gray Border */
+* {
+  box-sizing: border-box;
 }
 
-/* Background + Global Typography */
 body {
   background-color: var(--color-dark);
   color: var(--color-text);
@@ -38,71 +41,33 @@ body {
 }
 
 /* ===========================================
-   LIGHT MODE TEXT ENFORCERS (CRITICAL FIX)
-   Forces light text (gray-100/200/300) to become dark
-=========================================== */
-
-/* Force Headings to be Absolute Black in Light Mode */
-:root:not(.dark) h1,
-:root:not(.dark) h2,
-:root:not(.dark) h3,
-:root:not(.dark) h4,
-:root:not(.dark) h5,
-:root:not(.dark) h6 {
-  color: #000000 !important;
-}
-
-/* TARGETS THE QUOTE (text-gray-100) & SUBTITLES 
-   Forces them to dark gray (#374151) in light mode 
-*/
-:root:not(.dark) .text-gray-100,
-:root:not(.dark) .text-gray-200,
-:root:not(.dark) .text-gray-300,
-:root:not(.dark) .text-gray-400,
-:root:not(.dark) .text-gray-500 {
-  color: #374151 !important; /* Gray-700 */
-}
-
-/* Force 'text-white' to be dark in light mode UNLESS it's on a colored button/badge */
-:root:not(.dark)
-  .text-white:not(.bg-primary):not(.bg-primary-dark):not(.btn-primary):not(
-    .bg-red-500
-  ):not(.bg-green-600):not(.bg-blue-600):not(.bg-purple-600) {
-  color: #111827 !important;
-}
-
-/* ===========================================
-   GLASS CARD (Light + Dark)
+   GLASS CARD
 =========================================== */
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
-/* Light Mode Glass Card - Solid & Readable */
-:root:not(.dark) .glass-card {
-  background: #ffffff; /* Solid white */
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  color: #1f2937; /* Ensure default text inside cards is dark */
+.dark .glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Light mode glass card */
+.glass-card {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 /* ===========================================
-   TAILWIND UTILITIES OVERRIDES
+   TAILWIND UTILITIES
 =========================================== */
 
 @layer utilities {
   .text-primary {
     color: var(--color-primary);
-  }
-
-  /* Darken primary text in light mode for readability against white */
-  :root:not(.dark) .text-primary {
-    color: #059669; /* Emerald-600 */
   }
 
   .bg-primary {
@@ -115,84 +80,77 @@ body {
 
   .bg-card {
     background-color: var(--color-card);
-    transition: background-color 0.3s ease;
-  }
-
-  /* Smooth theme transition for all elements */
-  * {
-    transition-property: background-color, border-color, color;
-    transition-duration: 0.3s;
-    transition-timing-function: ease;
   }
 }
 
 /* ===========================================
-   INPUTS & FORMS (Light Mode Fixes)
+   FORM INPUTS (FIXED FOR DARK MODE)
 =========================================== */
 
-/* Force Inputs to have white background and dark text in Light Mode */
-:root:not(.dark) input,
-:root:not(.dark) select,
-:root:not(.dark) textarea {
-  background-color: #ffffff !important;
-  border: 1px solid #d1d5db !important;
-  color: #111827 !important;
+input,
+select,
+textarea {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  transition: all 0.3s ease;
 }
 
-:root:not(.dark) input::placeholder,
-:root:not(.dark) textarea::placeholder {
-  color: #6b7280 !important;
+/* CRITICAL FIX: Select dropdowns in dark mode */
+.dark select {
+  background-color: rgba(23, 23, 23, 0.95);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Light Mode Button Improvements (Secondary/Icon Buttons) */
-:root:not(.dark)
-  button:not(.bg-primary):not(.bg-red-500):not(.bg-green-600):not(
-    .bg-blue-600
-  ):not(.bg-purple-600) {
-  background-color: #f3f4f6; /* Light gray bg */
-  color: #1f2937; /* Dark text */
-  border: 1px solid #e5e7eb;
+.dark select option {
+  background-color: #171717;
+  color: #ffffff;
+  padding: 8px;
 }
 
-:root:not(.dark)
-  button:not(.bg-primary):not(.bg-red-500):not(.bg-green-600):not(
-    .bg-blue-600
-  ):not(.bg-purple-600):hover {
-  background-color: #e5e7eb;
+/* Fix for select arrow visibility */
+.dark select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2300e599' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
-/* ===========================================
-   RESPONSIVE UTILITIES
-=========================================== */
-
-/* Mobile-specific adjustments */
-@media (max-width: 640px) {
-  body {
-    font-size: 14px;
-  }
-
-  h1 {
-    font-size: 2rem !important;
-  }
-
-  h2 {
-    font-size: 1.5rem !important;
-  }
-
-  h3 {
-    font-size: 1.25rem !important;
-  }
-
-  .glass-card {
-    padding: 1rem;
-  }
+/* Light mode select styling */
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
-/* Tablet adjustments */
-@media (min-width: 641px) and (max-width: 1024px) {
-  .glass-card {
-    padding: 1.5rem;
-  }
+.dark input,
+.dark textarea {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-secondary);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 229, 153, 0.1);
 }
 
 /* ===========================================
@@ -201,11 +159,13 @@ body {
 
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 @media (max-width: 640px) {
   ::-webkit-scrollbar {
     width: 4px;
+    height: 4px;
   }
 }
 
@@ -256,12 +216,158 @@ body {
 }
 
 /* ===========================================
-   SAFE AREA PADDING (for notched devices)
+   RESPONSIVE UTILITIES
+=========================================== */
+
+@media (max-width: 640px) {
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 2rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  h3 {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Hide scrollbar for elements with no-scrollbar class */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ===========================================
+   SAFE AREA PADDING
 =========================================== */
 
 @supports (padding: max(0px)) {
   body {
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* ========================================
+   ENHANCED MOBILE RESPONSIVENESS
+======================================== */
+
+/* Better touch targets for mobile */
+@media (max-width: 640px) {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px; /* iOS recommended touch target */
+  }
+
+  /* Prevent text size adjustment on iOS */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Better tap highlight */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 229, 153, 0.1);
+  }
+}
+
+/* Responsive container padding */
+.container-responsive {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+/* Better card stacking on mobile */
+@media (max-width: 640px) {
+  .glass-card {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Improve modal sizing on small screens */
+@media (max-width: 640px) {
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+/* Better horizontal scroll indicators */
+.scroll-indicator {
+  position: relative;
+}
+
+.scroll-indicator::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to left, var(--color-dark), transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+@media (max-width: 640px) {
+  .scroll-indicator::after {
+    opacity: 1;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+  .glass-card {
+    padding: 1rem !important;
+  }
+
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Tablet-specific breakpoint (often overlooked) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  h1 {
+    font-size: 3rem !important;
+  }
+
+  .glass-card {
+    padding: 2rem;
+  }
+}
+
+/* Fix for iPhone notch and bottom bar */
+@supports (padding: max(0px)) {
+  .safe-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Better form layout on mobile */
+@media (max-width: 640px) {
+  .form-grid-mobile-stack > * {
+    grid-column: 1 / -1 !important;
   }
 }
