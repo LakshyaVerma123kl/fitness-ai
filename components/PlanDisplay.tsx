@@ -132,8 +132,8 @@ export default function PlanDisplay({
     setCompletedExercises(newSet);
   };
 
-  // 🔊 FUNCTION: Speak Plan
-  const speakPlan = async (section: "workout" | "diet" | "all") => {
+  // 🔊 FUNCTION: Speak Plan (Mobile Optimized)
+  const speakPlan = (section: "workout" | "diet" | "all") => {
     if (speaking) {
       window.speechSynthesis.cancel();
       setSpeaking(false);
@@ -141,39 +141,49 @@ export default function PlanDisplay({
     }
 
     setSpeaking(true);
-    let textToSpeak = "";
+    let fullText = "";
 
+    // 1. Build the text (Same as before)
     if (section === "workout" || section === "all") {
-      textToSpeak += "Here is your Workout Plan. ";
+      fullText += "Here is your Workout Plan. ";
       if (hasWorkout) {
         plan.workout.forEach((day: any) => {
-          textToSpeak += `${day.day}. Focus on ${day.focus}. `;
+          fullText += `${day.day}. Focus on ${day.focus}. `;
           day.exercises?.forEach((ex: any) => {
-            textToSpeak += `${ex.name}, ${ex.sets} sets of ${ex.reps} reps. `;
+            fullText += `${ex.name}, ${ex.sets} sets of ${ex.reps} reps. `;
           });
         });
       }
     }
 
     if (section === "diet" || section === "all") {
-      textToSpeak += "Here is your Diet Plan. ";
+      fullText += "Here is your Diet Plan. ";
       const mealsSource = plan.diet.meals || plan.diet;
       if (hasDiet) {
-        // Speak in specific order
         MEAL_ORDER.forEach((mealType) => {
           const details = mealsSource[mealType];
           if (details) {
-            textToSpeak += `For ${mealType}, have ${details.meal}. `;
+            fullText += `For ${mealType}, have ${details.meal}. `;
           }
         });
       }
     }
 
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.onend = () => setSpeaking(false);
-    window.speechSynthesis.speak(utterance);
+    // 2. 📱 MOBILE FIX: Split text into chunks
+    const chunks = fullText.match(/[^.!?]+[.!?]+/g) || [fullText];
+
+    chunks.forEach((chunk, index) => {
+      const utterance = new SpeechSynthesisUtterance(chunk.trim());
+      utterance.rate = 1;
+      utterance.pitch = 1;
+
+      // Stop speaking state only after the LAST chunk finishes
+      if (index === chunks.length - 1) {
+        utterance.onend = () => setSpeaking(false);
+      }
+
+      window.speechSynthesis.speak(utterance);
+    });
   };
 
   // 🎨 FUNCTION: Generate Image
