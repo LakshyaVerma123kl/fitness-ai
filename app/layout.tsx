@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+      <body className="antialiased bg-(--color-dark) text-(--color-text)">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -26,11 +26,32 @@ export default function RootLayout({
           <ClerkProvider
             appearance={{
               baseTheme: dark,
-              variables: { colorPrimary: "#00e599" },
+              variables: {
+                colorPrimary: "#00e599",
+                colorBackground: "#171717", // Matches glass-card dark bg
+                colorText: "#ffffff",
+              },
               elements: {
-                card: "bg-neutral-900 border border-neutral-800",
-                formButtonPrimary: "bg-[#00e599] hover:bg-[#00cc88] text-black",
+                card: "bg-neutral-900 border border-neutral-800 shadow-2xl",
+                formButtonPrimary:
+                  "bg-[#00e599] hover:bg-[#00cc88] text-black font-bold transition-all",
                 footerActionLink: "text-[#00e599] hover:text-[#00cc88]",
+
+                // Fix text & visibility in dark mode inputs
+                headerTitle: "text-white",
+                headerSubtitle: "text-gray-400",
+                formFieldLabel: "text-gray-300",
+                formFieldInput:
+                  "bg-white/5 text-white border-white/10 focus:border-[#00e599]",
+
+                // Social buttons styling
+                socialButtonsBlockButton:
+                  "bg-white/5 border-white/10 text-white hover:bg-white/10",
+                socialButtonsBlockButtonText: "text-white",
+
+                // Dividers
+                dividerLine: "bg-white/10",
+                dividerText: "text-gray-400",
               },
             }}
           >

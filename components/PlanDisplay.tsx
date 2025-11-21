@@ -38,6 +38,9 @@ import Toast from "./Toast";
 // 🎨 Chart Colors
 const COLORS = ["#3b82f6", "#10b981", "#eab308"]; // Protein (Blue), Carbs (Green), Fats (Yellow)
 
+// 🍽️ Meal Sequence
+const MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"];
+
 export default function PlanDisplay({
   plan,
   reset,
@@ -155,11 +158,13 @@ export default function PlanDisplay({
       textToSpeak += "Here is your Diet Plan. ";
       const mealsSource = plan.diet.meals || plan.diet;
       if (hasDiet) {
-        Object.entries(mealsSource).forEach(
-          ([mealType, details]: [string, any]) => {
-            textToSpeak += `For ${mealType}, have ${details?.meal}. `;
+        // Speak in specific order
+        MEAL_ORDER.forEach((mealType) => {
+          const details = mealsSource[mealType];
+          if (details) {
+            textToSpeak += `For ${mealType}, have ${details.meal}. `;
           }
-        );
+        });
       }
     }
 
@@ -283,13 +288,17 @@ export default function PlanDisplay({
       }
 
       const mealsSource = plan.diet.meals || plan.diet;
-      const dietRows = Object.entries(mealsSource).map(
-        ([meal, details]: [string, any]) => [
-          meal.toUpperCase(),
-          details.meal,
-          `${details.calories} kcal\nP:${details.protein} C:${details.carbs} F:${details.fats}`,
-        ]
-      );
+
+      // Use MEAL_ORDER to sort for PDF too
+      const dietRows = MEAL_ORDER.filter((key) => mealsSource[key]) // Filter out if meal doesn't exist
+        .map((mealType) => {
+          const details = mealsSource[mealType];
+          return [
+            mealType.toUpperCase(),
+            details.meal,
+            `${details.calories} kcal\nP:${details.protein} C:${details.carbs} F:${details.fats}`,
+          ];
+        });
 
       autoTable(doc, {
         startY: yPos,
@@ -393,67 +402,66 @@ export default function PlanDisplay({
           animate={{ scale: 1, opacity: 1 }}
           className="text-center mt-4"
         >
-          <div className="glass-card inline-block px-6 py-5 md:px-8 md:py-6 rounded-2xl border border-primary/30 bg-linear-to-r from-purple-900/20 to-blue-900/20 w-full md:w-auto">
+          <div className="glass-card inline-block px-6 py-5 md:px-8 md:py-6 rounded-2xl border border-(--color-primary) border-opacity-30 bg-linear-to-r from-purple-900/10 to-blue-900/10 w-full md:w-auto">
             <Sparkles className="inline-block text-yellow-400 mb-3" size={24} />
-            <p className="text-gray-100 text-lg md:text-xl italic font-light">
+            <p className="text-(--color-text) text-lg md:text-xl italic font-light">
               "{plan.motivation_quote}"
             </p>
           </div>
         </motion.div>
       )}
-
+      [Image of healthy meal prep]
       {/* User Stats Badges */}
       <div className="flex flex-wrap justify-center gap-3 md:gap-4">
         {plan._bmi && (
-          <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white/5 rounded-full border border-white/10 text-xs md:text-sm text-gray-300">
+          <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-(--color-card) rounded-full border border-(--color-border)] text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
             <Activity size={14} className="text-blue-400" />
             <span>
               BMI: <strong>{plan._bmi}</strong>
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white/5 rounded-full border border-white/10 text-xs md:text-sm text-gray-300">
+        <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-(--color-card) rounded-full border border-(--color-border) text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
           <Dumbbell size={14} className="text-green-400" />
           <span>
             Level: <strong>{userData?.level || "N/A"}</strong>
           </span>
         </div>
       </div>
-
       {/* 📅 Results Timeline Section */}
       {plan.results_timeline && (
-        <div className="glass-card p-5 md:p-6 rounded-2xl bg-white/5 border border-white/10">
+        <div className="glass-card p-5 md:p-6 rounded-2xl border border-[var(--color-border)]">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             <div className="shrink-0 flex items-center gap-3 md:w-1/4">
               <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400">
                 <Calendar size={24} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-[var(--color-text)]">
                   Projected Timeline
                 </h3>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                   Based on consistency
                 </p>
               </div>
             </div>
 
             <div className="flex-1 grid gap-4 sm:grid-cols-2">
-              <div className="p-4 bg-black/20 rounded-xl border border-white/5">
+              <div className="p-4 bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp size={16} className="text-green-400" />
-                  <h4 className="text-sm font-bold text-gray-200">
+                  <h4 className="text-sm font-bold text-[var(--color-text)]">
                     Expected Start
                   </h4>
                 </div>
-                <p className="text-sm text-white">
+                <p className="text-sm text-[var(--color-text-secondary)]">
                   {plan.results_timeline.estimated_start}
                 </p>
               </div>
-              <div className="p-4 bg-black/20 rounded-xl border border-white/5">
+              <div className="p-4 bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <Activity size={16} className="text-yellow-400" />
-                  <h4 className="text-sm font-bold text-gray-200">
+                  <h4 className="text-sm font-bold text-[var(--color-text)]">
                     Key Milestones
                   </h4>
                 </div>
@@ -462,7 +470,7 @@ export default function PlanDisplay({
                     (m: string, i: number) => (
                       <li
                         key={i}
-                        className="text-xs text-gray-300 flex items-start gap-2"
+                        className="text-xs text-[var(--color-text-secondary)] flex items-start gap-2"
                       >
                         <span className="text-yellow-500 mt-0.5">•</span> {m}
                       </li>
@@ -474,7 +482,6 @@ export default function PlanDisplay({
           </div>
         </div>
       )}
-
       {/* Global Actions */}
       <div className="grid grid-cols-2 sm:flex flex-wrap gap-3 justify-center">
         <button
@@ -515,9 +522,8 @@ export default function PlanDisplay({
           </button>
         )}
       </div>
-
       {/* TABS NAVIGATION */}
-      <div className="flex justify-start sm:justify-center gap-2 md:gap-4 border-b border-white/10 pb-0 overflow-x-auto no-scrollbar snap-x">
+      <div className="flex justify-start sm:justify-center gap-2 md:gap-4 border-b border-[var(--color-border)] pb-0 overflow-x-auto no-scrollbar snap-x">
         {[
           { id: "workout", label: "Workout", icon: Dumbbell },
           { id: "diet", label: "Diet & Macros", icon: Utensils },
@@ -528,8 +534,8 @@ export default function PlanDisplay({
             onClick={() => setActiveTab(tab.id as any)}
             className={`flex items-center gap-2 px-4 md:px-6 py-3 rounded-t-xl transition-all whitespace-nowrap snap-start text-sm md:text-base shrink-0 ${
               activeTab === tab.id
-                ? "bg-white/10 text-white border-b-2 border-blue-500"
-                : "text-gray-500 hover:text-gray-300"
+                ? "bg-[var(--color-primary)]/10 dark:bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
             }`}
           >
             <tab.icon size={16} className="md:w-[18px] md:h-[18px]" />
@@ -537,7 +543,6 @@ export default function PlanDisplay({
           </button>
         ))}
       </div>
-
       {/* CONTENT AREA */}
       <div className="min-h-[400px]">
         <AnimatePresence mode="wait">
@@ -554,10 +559,10 @@ export default function PlanDisplay({
                 plan.workout.map((day: any, i: number) => (
                   <div
                     key={i}
-                    className="glass-card p-4 md:p-6 rounded-2xl border border-white/5 bg-black/20"
+                    className="glass-card p-4 md:p-6 rounded-2xl border border-[var(--color-border)]"
                   >
                     <div className="flex flex-wrap justify-between items-center mb-4 md:mb-6 gap-2">
-                      <h3 className="text-lg md:text-xl font-bold text-white">
+                      <h3 className="text-lg md:text-xl font-bold text-[var(--color-text)]">
                         {day.day}
                       </h3>
                       <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs md:text-sm font-medium">
@@ -570,8 +575,8 @@ export default function PlanDisplay({
                           key={j}
                           className={`p-3 md:p-4 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group ${
                             completedExercises.has(ex.name)
-                              ? "bg-green-900/20 border border-green-500/30"
-                              : "bg-white/5 hover:bg-white/10"
+                              ? "bg-green-500/10 border border-green-500/30"
+                              : "bg-[var(--color-card)] hover:bg-[var(--color-border)] border border-[var(--color-border)]"
                           }`}
                         >
                           <div className="flex items-start sm:items-center gap-3 md:gap-4 w-full">
@@ -580,7 +585,7 @@ export default function PlanDisplay({
                               className={`p-1 rounded-full transition-colors mt-1 sm:mt-0 shrink-0 ${
                                 completedExercises.has(ex.name)
                                   ? "text-green-400"
-                                  : "text-gray-600 hover:text-gray-400"
+                                  : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                               }`}
                             >
                               <CheckCircle
@@ -592,13 +597,13 @@ export default function PlanDisplay({
                               <p
                                 className={`font-medium text-sm md:text-base truncate ${
                                   completedExercises.has(ex.name)
-                                    ? "text-gray-500 line-through"
-                                    : "text-white"
+                                    ? "text-[var(--color-text-secondary)] line-through"
+                                    : "text-[var(--color-text)]"
                                 }`}
                               >
                                 {ex.name}
                               </p>
-                              <p className="text-xs md:text-sm text-gray-400 mt-0.5">
+                              <p className="text-xs md:text-sm text-[var(--color-text-secondary)] mt-0.5">
                                 {ex.sets} sets × {ex.reps} reps • {ex.rest} rest
                               </p>
                             </div>
@@ -625,7 +630,7 @@ export default function PlanDisplay({
                                   "exercise"
                                 )
                               }
-                              className="p-2 bg-white/5 rounded-lg text-blue-400 flex items-center justify-center gap-2 opacity-100 transition-all hover:bg-white/10 flex-1 sm:flex-none"
+                              className="p-2 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg text-blue-400 flex items-center justify-center gap-2 opacity-100 transition-all hover:bg-black/5 dark:hover:bg-white/10 flex-1 sm:flex-none"
                               title="Generate AI Demo Image"
                             >
                               <ImageIcon size={18} />
@@ -637,7 +642,7 @@ export default function PlanDisplay({
                   </div>
                 ))
               ) : (
-                <p className="text-center text-gray-500">
+                <p className="text-center text-[var(--color-text-secondary)]">
                   No workout data found.
                 </p>
               )}
@@ -657,8 +662,8 @@ export default function PlanDisplay({
               <div className="lg:col-span-3 grid md:grid-cols-2 gap-4">
                 {/* Weekly Strategies */}
                 {plan.diet.strategy && (
-                  <div className="p-5 rounded-2xl bg-linear-to-br from-blue-900/20 to-purple-900/20 border border-white/10">
-                    <h4 className="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-900/10 to-purple-900/10 border border-[var(--color-border)]">
+                    <h4 className="text-sm font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
                       <Zap size={16} className="text-yellow-400" /> Weekly
                       Strategy
                     </h4>
@@ -667,15 +672,15 @@ export default function PlanDisplay({
                         <p className="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">
                           Week 1
                         </p>
-                        <p className="text-sm text-gray-300">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
                           {plan.diet.strategy.week_1}
                         </p>
                       </div>
-                      <div className="border-t border-white/10 pt-3">
+                      <div className="border-t border-[var(--color-border)] pt-3">
                         <p className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-1">
                           Week 2
                         </p>
-                        <p className="text-sm text-gray-300">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
                           {plan.diet.strategy.week_2}
                         </p>
                       </div>
@@ -685,8 +690,8 @@ export default function PlanDisplay({
 
                 {/* Supplements */}
                 {plan.supplements && (
-                  <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                    <h4 className="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <div className="p-5 rounded-2xl bg-[var(--color-card)] border border-[var(--color-border)] shadow-sm">
+                    <h4 className="text-sm font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
                       <Activity size={16} className="text-green-400" />{" "}
                       Recommended Supplements
                     </h4>
@@ -694,7 +699,9 @@ export default function PlanDisplay({
                       {plan.supplements.map((item: string, i: number) => (
                         <span
                           key={i}
-                          className="px-3 py-1 rounded-full bg-black/30 border border-white/10 text-xs text-gray-300"
+                          // Changed bg-opacity-10 to bg-opacity-5
+                          // Changed border-opacity-20 to border-opacity-10
+                          className="px-3 py-1 rounded-full bg-[var(--color-primary)] bg-opacity-5 border border-[var(--color-primary)] border-opacity-10 text-xs text-[var(--color-text-secondary)]"
                         >
                           {item}
                         </span>
@@ -705,8 +712,8 @@ export default function PlanDisplay({
               </div>
 
               {/* Macro Chart Column */}
-              <div className="lg:col-span-1 glass-card p-4 md:p-6 rounded-2xl bg-black/20 h-fit lg:sticky lg:top-4 order-1 lg:order-1">
-                <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
+              <div className="lg:col-span-1 glass-card p-4 md:p-6 rounded-2xl h-fit lg:sticky lg:top-4 order-1 lg:order-1 border border-[var(--color-border)]">
+                <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2 text-[var(--color-text)]">
                   <PieChartIcon size={20} className="text-blue-400" />
                   Macro Split
                 </h3>
@@ -731,12 +738,13 @@ export default function PlanDisplay({
                       </Pie>
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: "var(--color-card)",
+                          border: "1px solid var(--color-border)",
                           borderRadius: "8px",
                           fontSize: "12px",
+                          color: "var(--color-text)",
                         }}
-                        itemStyle={{ color: "#fff" }}
+                        itemStyle={{ color: "var(--color-text)" }}
                       />
                       <Legend
                         verticalAlign="bottom"
@@ -746,13 +754,13 @@ export default function PlanDisplay({
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-4 text-center border-t border-white/10 pt-4">
-                  <p className="text-xs md:text-sm text-gray-400 uppercase tracking-wider">
+                <div className="mt-4 text-center border-t border-[var(--color-border)] pt-4">
+                  <p className="text-xs md:text-sm text-[var(--color-text-secondary)] uppercase tracking-wider">
                     Daily Target
                   </p>
-                  <p className="text-xl md:text-2xl font-bold text-white">
+                  <p className="text-xl md:text-2xl font-bold text-[var(--color-text)]">
                     {plan.daily_calories}{" "}
-                    <span className="text-xs md:text-sm font-normal text-gray-500">
+                    <span className="text-xs md:text-sm font-normal text-[var(--color-text-secondary)]">
                       kcal
                     </span>
                   </p>
@@ -762,11 +770,15 @@ export default function PlanDisplay({
               {/* Meals Column */}
               <div className="lg:col-span-2 space-y-4 order-2 lg:order-2">
                 {hasDiet && mealsSource
-                  ? Object.entries(mealsSource).map(
-                      ([mealType, details]: [string, any]) => (
+                  ? MEAL_ORDER.map((mealType) => {
+                      // Only render this meal type if it exists in the data
+                      if (!mealsSource[mealType]) return null;
+                      const details = mealsSource[mealType];
+
+                      return (
                         <div
                           key={mealType}
-                          className="glass-card p-4 md:p-5 rounded-2xl bg-white/5 flex gap-3 md:gap-4 items-start hover:bg-white/10 transition-colors group relative overflow-hidden border border-white/5"
+                          className="glass-card p-4 md:p-5 rounded-2xl bg-[var(--color-card)] flex gap-3 md:gap-4 items-start hover:shadow-lg transition-all group relative overflow-hidden border border-[var(--color-border)]"
                         >
                           <div
                             className={`w-1.5 self-stretch rounded-full shrink-0 ${
@@ -781,7 +793,7 @@ export default function PlanDisplay({
                           ></div>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
-                              <h4 className="capitalize text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">
+                              <h4 className="capitalize text-[var(--color-text-secondary)] text-[10px] md:text-xs font-bold tracking-wider mb-1">
                                 {mealType}
                               </h4>
                               <div className="flex gap-2">
@@ -792,7 +804,7 @@ export default function PlanDisplay({
                                   )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-gray-500 hover:text-green-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                  className="text-gray-400 hover:text-green-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                   title="Find Recipe"
                                 >
                                   <ChefHat size={16} />
@@ -805,34 +817,34 @@ export default function PlanDisplay({
                                       "food"
                                     )
                                   }
-                                  className="text-gray-500 hover:text-blue-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                  className="text-gray-400 hover:text-blue-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                   title="Visualize Meal"
                                 >
                                   <ImageIcon size={16} />
                                 </button>
                               </div>
                             </div>
-                            <h3 className="text-base md:text-lg font-bold text-white mb-2 wrap-break-words">
+                            <h3 className="text-base md:text-lg font-bold text-[var(--color-text)] mb-2 wrap-break-words">
                               {details.meal}
                             </h3>
-                            <div className="flex flex-wrap gap-2 text-[10px] md:text-xs text-gray-300 font-mono">
-                              <span className="bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
+                            <div className="flex flex-wrap gap-2 text-[10px] md:text-xs text-[var(--color-text-secondary)] font-mono">
+                              <span className="bg-blue-500/10 border border-blue-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
                                 {details.protein} Protein
                               </span>
-                              <span className="bg-green-500/20 border border-green-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
+                              <span className="bg-green-500/10 border border-green-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
                                 {details.carbs} Carbs
                               </span>
-                              <span className="bg-yellow-500/20 border border-yellow-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
+                              <span className="bg-yellow-500/10 border border-yellow-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded whitespace-nowrap">
                                 {details.fats} Fats
                               </span>
                             </div>
-                            <p className="text-xs text-gray-400 mt-2 italic border-t border-white/5 pt-2">
+                            <p className="text-xs text-[var(--color-text-secondary)] mt-2 italic border-t border-[var(--color-border)] pt-2">
                               Portion: {details.portion}
                             </p>
                           </div>
                         </div>
-                      )
-                    )
+                      );
+                    })
                   : null}
               </div>
             </motion.div>
@@ -845,9 +857,9 @@ export default function PlanDisplay({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="glass-card p-4 md:p-8 rounded-2xl bg-black/20 max-w-2xl mx-auto border border-white/10"
+              className="glass-card p-4 md:p-8 rounded-2xl border border-[var(--color-border)] max-w-2xl mx-auto"
             >
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 flex items-center gap-3">
+              <h3 className="text-xl md:text-2xl font-bold text-[var(--color-text)] mb-4 md:mb-6 flex items-center gap-3">
                 <ShoppingBag className="text-green-400" />
                 Grocery List
               </h3>
@@ -856,19 +868,21 @@ export default function PlanDisplay({
                   shoppingList.map((item: string, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 p-3 border-b border-white/10 last:border-0 hover:bg-white/5 transition rounded-lg"
+                      className="flex items-center gap-3 p-3 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-primary)] hover:bg-opacity-5 transition rounded-lg"
                     >
                       <input
                         type="checkbox"
-                        className="w-5 h-5 rounded border-gray-600 text-green-500 focus:ring-green-500 bg-transparent cursor-pointer shrink-0"
+                        // Changed text-green-500 to text-green-500/50 (50% opacity)
+                        // Changed focus:ring-green-500 to focus:ring-green-500/50
+                        className="w-5 h-5 rounded border-gray-400 text-green-900/50 focus:ring-green-900/50 bg-transparent cursor-pointer shrink-0"
                       />
-                      <span className="text-gray-300 text-base md:text-lg">
+                      <span className="text-[var(--color-text-secondary)] text-base md:text-lg ">
                         {item}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 italic">
+                  <p className="text-[var(--color-text-secondary)] italic">
                     No items found in diet plan.
                   </p>
                 )}
@@ -877,7 +891,7 @@ export default function PlanDisplay({
                 onClick={() =>
                   navigator.clipboard.writeText(shoppingList.join("\n"))
                 }
-                className="w-full mt-6 md:mt-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium transition-colors text-gray-300"
+                className="w-full mt-6 md:mt-8 py-3 bg-[var(--color-card)] border border-[var(--color-border)] hover:bg-[var(--color-border)] rounded-xl text-sm font-medium transition-colors text-[var(--color-text)]"
               >
                 Copy List to Clipboard
               </button>
@@ -885,7 +899,6 @@ export default function PlanDisplay({
           )}
         </AnimatePresence>
       </div>
-
       {/* Image Modal */}
       {imageModalData && (
         <div
@@ -895,7 +908,7 @@ export default function PlanDisplay({
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-[#1a1a1a] p-4 rounded-2xl w-full max-w-md md:max-w-lg border border-white/10 shadow-2xl relative mx-auto"
+            className="bg-[var(--color-card)] p-4 rounded-2xl w-full max-w-md md:max-w-lg border border-[var(--color-border)] shadow-2xl relative mx-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -905,16 +918,16 @@ export default function PlanDisplay({
               <X size={18} />
             </button>
 
-            <h3 className="text-lg md:text-xl font-bold mb-4 text-white pr-8">
+            <h3 className="text-lg md:text-xl font-bold mb-4 text-[var(--color-text)] pr-8">
               {imageModalData.type === "exercise"
                 ? "Workout Demo"
                 : "Meal Idea"}
             </h3>
 
             {generatingImage ? (
-              <div className="h-48 md:h-64 flex flex-col items-center justify-center gap-4 bg-white/5 rounded-xl">
+              <div className="h-48 md:h-64 flex flex-col items-center justify-center gap-4 bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl">
                 <div className="animate-spin rounded-full h-8 w-8 md:h-10 md:w-10 border-t-2 border-blue-500"></div>
-                <p className="text-gray-400 animate-pulse text-sm md:text-base">
+                <p className="text-[var(--color-text-secondary)] animate-pulse text-sm md:text-base">
                   Generating AI Image...
                 </p>
               </div>
@@ -941,24 +954,21 @@ export default function PlanDisplay({
           </motion.div>
         </div>
       )}
-
       {/* Medical Disclaimer Footer */}
-      <div className="text-center mt-8 md:mt-12 pt-6 md:pt-8 border-t border-white/5 text-[10px] md:text-xs text-gray-500 px-4">
+      <div className="text-center mt-8 md:mt-12 pt-6 md:pt-8 border-t border-[var(--color-border)] text-[10px] md:text-xs text-[var(--color-text-secondary)] px-4">
         <p>
           ⚠️ <strong>Disclaimer:</strong> This is an AI-generated plan. Please
           consult a healthcare professional before starting any new exercise or
           diet program.
         </p>
       </div>
-
       {/* Reset Button */}
       <button
         onClick={reset}
-        className="text-gray-500 hover:text-white transition-colors text-xs md:text-sm w-full text-center mt-4 flex items-center justify-center gap-2 group pb-4"
+        className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors text-xs md:text-sm w-full text-center mt-4 flex items-center justify-center gap-2 group pb-4"
       >
         <span>← Start Over</span>
       </button>
-
       {/* Toast Notification */}
       {toast?.show && (
         <Toast
