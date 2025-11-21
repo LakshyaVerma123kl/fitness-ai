@@ -34,10 +34,10 @@ import {
   Legend,
 } from "recharts";
 import Toast from "./Toast";
-
+import { useAuth } from "@clerk/nextjs";
 // 🎨 Chart Colors
 const COLORS = ["#3b82f6", "#10b981", "#eab308"]; // Protein (Blue), Carbs (Green), Fats (Yellow)
-
+const { isSignedIn } = useAuth();
 // 🍽️ Meal Sequence
 const MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"];
 
@@ -346,7 +346,18 @@ export default function PlanDisplay({
   };
 
   // 💾 FUNCTION: Save Plan (Toast Version)
+  // 💾 FUNCTION: Save Plan (Toast Version)
   const savePlan = async () => {
+    // 1. Check if user is signed in immediately
+    if (!isSignedIn) {
+      setToast({
+        show: true,
+        message: "⚠️ Please Sign In to save your plan!",
+        type: "warning",
+      });
+      return; // Stop execution here
+    }
+
     try {
       const res = await fetch("/api/plans", {
         method: "POST",
@@ -356,10 +367,11 @@ export default function PlanDisplay({
 
       const data = await res.json();
 
+      // 2. Backup check (in case session expired while on page)
       if (res.status === 401) {
         setToast({
           show: true,
-          message: "⚠️ Please Sign In to save your plan!",
+          message: "⚠️ Session expired. Please Sign In again!",
           type: "warning",
         });
         return;
@@ -410,7 +422,7 @@ export default function PlanDisplay({
           </div>
         </motion.div>
       )}
-      [Image of healthy meal prep]
+
       {/* User Stats Badges */}
       <div className="flex flex-wrap justify-center gap-3 md:gap-4">
         {plan._bmi && (
