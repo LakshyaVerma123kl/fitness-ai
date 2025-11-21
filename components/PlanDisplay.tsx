@@ -37,7 +37,7 @@ import Toast from "./Toast";
 import { useAuth } from "@clerk/nextjs";
 // 🎨 Chart Colors
 const COLORS = ["#3b82f6", "#10b981", "#eab308"]; // Protein (Blue), Carbs (Green), Fats (Yellow)
-const { isSignedIn } = useAuth();
+
 // 🍽️ Meal Sequence
 const MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"];
 
@@ -61,6 +61,7 @@ export default function PlanDisplay({
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
     new Set()
   );
+  const { isSignedIn } = useAuth();
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
