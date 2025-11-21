@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import "./globals.css";
@@ -7,8 +7,18 @@ import { ThemeProvider } from "../components/ThemeProvider";
 export const metadata: Metadata = {
   title: "FitnessAI - Your AI Personal Trainer",
   description: "AI-powered personalized fitness and diet plans",
+  manifest: "/manifest.json", // Link to the manifest
+  icons: {
+    apple: "/icon-192x192.png", // iOS Icon
+  },
 };
-
+export const viewport: Viewport = {
+  themeColor: "#00e599",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // Prevents zooming like a native app
+};
 export default function RootLayout({
   children,
 }: Readonly<{

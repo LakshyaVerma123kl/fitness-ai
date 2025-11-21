@@ -1,11 +1,23 @@
-// next.config.ts
 import type { NextConfig } from "next";
+const withPWA = require("next-pwa")({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  // ⚠️ CRITICAL: Disable PWA in development to prevent Turbopack conflict
+  disable: process.env.NODE_ENV === "development",
+});
 
 const nextConfig: NextConfig = {
   images: {
-    domains: [
-      "oaidalleapiprodscus.blob.core.windows.net",
-      "replicate.delivery",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "oaidalleapiprodscus.blob.core.windows.net",
+      },
+      {
+        protocol: "https",
+        hostname: "replicate.delivery",
+      },
     ],
   },
   experimental: {
@@ -13,6 +25,7 @@ const nextConfig: NextConfig = {
       allowedOrigins: ["localhost:3000"],
     },
   },
+  turbopack: {},
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
