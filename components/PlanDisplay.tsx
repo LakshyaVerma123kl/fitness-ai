@@ -724,7 +724,7 @@ export default function PlanDisplay({
                           key={i}
                           // Changed bg-opacity-10 to bg-opacity-5
                           // Changed border-opacity-20 to border-opacity-10
-                          className="px-3 py-1 rounded-full bg-[var(--color-primary)] bg-opacity-5 border border-[var(--color-primary)] border-opacity-10 text-xs text-[var(--color-text-secondary)]"
+                          className="px-3 py-1 rounded-full bg-[var(--color-green-700)] bg-opacity-5 border border-[var(--color-green-750)] border-opacity-10 text-xs "
                         >
                           {item}
                         </span>
@@ -891,7 +891,7 @@ export default function PlanDisplay({
                   shoppingList.map((item: string, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 p-3 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-primary)] hover:bg-opacity-5 transition rounded-lg"
+                      className="flex items-center gap-3 p-3 border-b border-[var(--color-green-700)] last:border-0 hover:bg-[var(--color-green-750)] hover:bg-opacity-5 transition rounded-lg"
                     >
                       <input
                         type="checkbox"
