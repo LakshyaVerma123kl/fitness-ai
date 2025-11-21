@@ -67,6 +67,16 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
       });
       return;
     }
+
+    // Show login prompt if email notifications are enabled
+    if (formData.emailNotifications) {
+      setToast({
+        show: true,
+        message: "📧 Please log in to receive email notifications",
+        type: "warning",
+      });
+    }
+
     onSubmit(formData);
   };
 
