@@ -620,29 +620,29 @@ export default function PlanDisplay({
                       {day.exercises?.map((ex: any, j: number) => (
                         <div
                           key={j}
-                          className={`p-3 md:p-4 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group ${
+                          className={`p-3 md:p-4 rounded-xl transition-all flex flex-col gap-3 group ${
                             completedExercises.has(ex.name)
                               ? "bg-green-500/10 border border-green-500/30"
                               : "bg-[var(--color-card)] hover:bg-[var(--color-border)] border border-[var(--color-border)]"
                           }`}
                         >
-                          <div className="flex items-start sm:items-center gap-3 md:gap-4 w-full">
+                          <div className="flex items-start gap-3 md:gap-4 w-full min-w-0">
                             <button
                               onClick={() => toggleExercise(ex.name)}
-                              className={`p-1 rounded-full transition-colors mt-1 sm:mt-0 shrink-0 ${
+                              className={`p-1 rounded-full transition-colors mt-0.5 shrink-0 ${
                                 completedExercises.has(ex.name)
                                   ? "text-green-400"
                                   : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                               }`}
                             >
                               <CheckCircle
-                                size={22}
+                                size={20}
                                 className="md:w-6 md:h-6"
                               />
                             </button>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 overflow-hidden">
                               <p
-                                className={`font-medium text-sm md:text-base truncate ${
+                                className={`font-medium text-sm md:text-base break-words ${
                                   completedExercises.has(ex.name)
                                     ? "text-[var(--color-text-secondary)] line-through"
                                     : "text-[var(--color-text)]"
@@ -650,24 +650,28 @@ export default function PlanDisplay({
                               >
                                 {ex.name}
                               </p>
-                              <p className="text-xs md:text-sm text-[var(--color-text-secondary)] mt-0.5">
+                              <p className="text-xs md:text-sm text-[var(--color-text-secondary)] mt-0.5 break-words">
                                 {ex.sets} sets × {ex.reps} reps • {ex.rest} rest
                               </p>
                             </div>
                           </div>
 
                           {/* Action Buttons: Demo + YouTube */}
-                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <div className="flex items-center gap-2 w-full">
                             <a
                               href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
                                 ex.name + " exercise form"
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors flex-1 sm:flex-none flex justify-center"
+                              className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors flex-1 flex justify-center items-center gap-1.5 text-xs md:text-sm"
                               title="Watch Tutorial on YouTube"
                             >
-                              <Youtube size={18} />
+                              <Youtube
+                                size={16}
+                                className="md:w-[18px] md:h-[18px]"
+                              />
+                              <span className="hidden xs:inline">Tutorial</span>
                             </a>
 
                             <button
@@ -677,10 +681,14 @@ export default function PlanDisplay({
                                   "exercise"
                                 )
                               }
-                              className="p-2 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg text-blue-400 flex items-center justify-center gap-2 opacity-100 transition-all hover:bg-black/5 dark:hover:bg-white/10 flex-1 sm:flex-none"
+                              className="p-2 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg text-blue-400 flex items-center justify-center gap-1.5 opacity-100 transition-all hover:bg-black/5 dark:hover:bg-white/10 flex-1 text-xs md:text-sm"
                               title="Generate AI Demo Image"
                             >
-                              <ImageIcon size={18} />
+                              <ImageIcon
+                                size={16}
+                                className="md:w-[18px] md:h-[18px]"
+                              />
+                              <span className="hidden xs:inline">Demo</span>
                             </button>
                           </div>
                         </div>
