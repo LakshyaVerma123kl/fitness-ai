@@ -1,64 +1,52 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 🎨 Image Generation API Route
-// Supports multiple FREE image generation providers
+// ==========================================
+// ⚙️ CONFIGURATION & SUPABASE SETUP
+// ==========================================
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 const IMAGE_PROVIDERS = [
-  // 1. Pollinations.ai (100% FREE, no API key) - Kept as first priority
   { name: "pollinations", model: "flux" },
-
-  // 2. Google Gemini (Imagen 3) - High Quality & Free Tier available
   { name: "gemini", model: "imagen-3.0-generate-001" },
-
-  // 3. Replicate (Free tier available)
   { name: "replicate", model: "stability-ai/sdxl" },
-
-  // 4. HuggingFace (Free)
   { name: "huggingface", model: "stabilityai/stable-diffusion-xl-base-1.0" },
 ];
 
-// Helper: Call Google Gemini (Imagen 3)
+// ==========================================
+// 🔌 AI PROVIDER HELPERS
+// ==========================================
+
+// 1. Google Gemini (Imagen 3)
 async function callGemini(prompt: string) {
-  const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey) throw new Error("GOOGLE_API_KEY not found");
+  const apiKey = process.env.GEMINI_API_KEY; // Changed to match your other route env var
+  if (!apiKey) return null;
 
-  // Using the REST API to avoid adding heavy SDK dependencies
   const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
-
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      instances: [{ prompt: prompt }],
-      parameters: {
-        sampleCount: 1,
-        // You can add aspectRatio: "1:1", "16:9", etc. here if needed
-      },
+      instances: [{ prompt }],
+      parameters: { sampleCount: 1 },
     }),
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini API failed: ${errorText}`);
-  }
-
+  if (!response.ok) return null;
   const data = await response.json();
-
-  // Gemini returns raw base64 string in data.predictions[0].bytesBase64Encoded
   const base64Image = data.predictions?.[0]?.bytesBase64Encoded;
-
-  if (!base64Image) throw new Error("No image returned from Gemini");
-
-  // Return formatted as data URL
-  return `data:image/png;base64,${base64Image}`;
+  return base64Image ? `data:image/png;base64,${base64Image}` : null;
 }
 
-// Helper: Call Replicate API
+// 2. Replicate
 async function callReplicate(prompt: string) {
   const apiKey = process.env.REPLICATE_API_KEY;
-  if (!apiKey) throw new Error("REPLICATE_API_KEY not found");
+  if (!apiKey) return null;
 
   const response = await fetch("https://api.replicate.com/v1/predictions", {
     method: "POST",
@@ -73,15 +61,13 @@ async function callReplicate(prompt: string) {
     }),
   });
 
-  if (!response.ok) throw new Error("Replicate API failed");
-
+  if (!response.ok) return null;
   const data = await response.json();
 
-  // Poll for result
   let result = data;
   while (result.status !== "succeeded" && result.status !== "failed") {
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    const pollResponse = await fetch(data.urls.get, {
+    const pollResponse = await fetch(result.urls.get, {
       headers: { Authorization: `Token ${apiKey}` },
     });
     result = await pollResponse.json();
@@ -90,10 +76,10 @@ async function callReplicate(prompt: string) {
   return result.output?.[0] || null;
 }
 
-// Helper: Call HuggingFace API
+// 3. HuggingFace
 async function callHuggingFace(prompt: string) {
   const apiKey = process.env.HUGGINGFACE_API_KEY;
-  if (!apiKey) throw new Error("HUGGINGFACE_API_KEY not found");
+  if (!apiKey) return null;
 
   const response = await fetch(
     "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
@@ -107,80 +93,134 @@ async function callHuggingFace(prompt: string) {
     }
   );
 
-  if (!response.ok) throw new Error("HuggingFace API failed");
-
+  if (!response.ok) return null;
   const blob = await response.blob();
   const buffer = await blob.arrayBuffer();
   const base64 = Buffer.from(buffer).toString("base64");
   return `data:image/png;base64,${base64}`;
 }
 
-// Helper: Call Pollinations.ai (100% FREE!)
+// 4. Pollinations.ai (Fallback)
 async function callPollinations(prompt: string) {
   const encodedPrompt = encodeURIComponent(prompt);
-  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&nologo=true`;
-  return imageUrl;
+  return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
 }
+
+// ==========================================
+// 🚀 MAIN ROUTE
+// ==========================================
 
 export async function POST(req: Request) {
   try {
     const { prompt, type } = await req.json();
 
     if (!prompt) {
-      return NextResponse.json(
-        { error: "Prompt is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Prompt required" }, { status: 400 });
     }
 
-    // Enhanced prompts
+    // 1. 🔍 CHECK CACHE (Supabase)
+    const cacheKey = `${type}:${prompt.toLowerCase().trim()}`;
+    const { data: cachedEntry } = await supabase
+      .from("image_cache")
+      .select("image_url")
+      .eq("prompt", cacheKey)
+      .single();
+
+    if (cachedEntry) {
+      console.log("⚡️ Cache Hit! Serving from Storage.");
+      return NextResponse.json({ imageUrl: cachedEntry.image_url });
+    }
+
+    // 2. 🎨 GENERATE NEW IMAGE
+    console.log("🎨 Cache Miss. Generating...");
+
     const enhancedPrompt =
       type === "exercise"
-        ? `${prompt}, professional gym photography, high quality, detailed`
-        : `${prompt}, professional food photography, high quality, appetizing`;
+        ? `${prompt}, fitness gym photography, 8k, cinematic lighting, highly detailed`
+        : `${prompt}, professional food photography, 8k, appetizing, cinematic lighting`;
 
-    let imageUrl = null;
+    let rawImageUrl: string | null = null;
 
-    // Iterate through providers
-    // We try Pollinations first (easiest/cheapest), then Gemini (high quality), then others
+    // Provider Loop
     for (const provider of IMAGE_PROVIDERS) {
       try {
         if (provider.name === "pollinations") {
-          imageUrl = await callPollinations(enhancedPrompt);
-        } else if (provider.name === "gemini" && process.env.GOOGLE_API_KEY) {
-          imageUrl = await callGemini(enhancedPrompt);
-        } else if (
-          provider.name === "replicate" &&
-          process.env.REPLICATE_API_KEY
-        ) {
-          imageUrl = await callReplicate(enhancedPrompt);
-        } else if (
-          provider.name === "huggingface" &&
-          process.env.HUGGINGFACE_API_KEY
-        ) {
-          imageUrl = await callHuggingFace(enhancedPrompt);
+          rawImageUrl = await callPollinations(enhancedPrompt);
+        } else if (provider.name === "gemini") {
+          rawImageUrl = await callGemini(enhancedPrompt);
+        } else if (provider.name === "replicate") {
+          rawImageUrl = await callReplicate(enhancedPrompt);
+        } else if (provider.name === "huggingface") {
+          rawImageUrl = await callHuggingFace(enhancedPrompt);
         }
 
-        if (imageUrl) {
-          return NextResponse.json({ imageUrl });
-        }
-      } catch (error: any) {
-        // Continue to next provider loop
+        if (rawImageUrl) break; // Stop if we got an image
+      } catch (e) {
+        console.warn(`Provider ${provider.name} failed, trying next...`);
       }
     }
 
-    // If all providers fail, return placeholder
+    // Fallback if literally everything fails
+    if (!rawImageUrl) {
+      return NextResponse.json({
+        imageUrl: `https://via.placeholder.com/512?text=${encodeURIComponent(
+          prompt
+        )}`,
+        fallback: true,
+      });
+    }
 
-    return NextResponse.json({
-      imageUrl: `https://via.placeholder.com/512x512/1a1a1a/00e599?text=${encodeURIComponent(
-        type === "exercise" ? "Exercise" : "Meal"
-      )}`,
-      fallback: true,
+    // 3. 📥 DOWNLOAD & UPLOAD TO SUPABASE STORAGE
+    // We need to convert URL or Base64 -> Buffer -> Supabase Storage
+
+    let imageBuffer: Buffer;
+    let contentType = "image/jpeg";
+
+    if (rawImageUrl.startsWith("data:")) {
+      // Handle Base64 (Gemini/HF)
+      const matches = rawImageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        contentType = matches[1];
+        imageBuffer = Buffer.from(matches[2], "base64");
+      } else {
+        throw new Error("Invalid base64 string");
+      }
+    } else {
+      // Handle URL (Pollinations/Replicate)
+      const res = await fetch(rawImageUrl);
+      const blob = await res.arrayBuffer();
+      imageBuffer = Buffer.from(blob);
+      contentType = res.headers.get("content-type") || "image/jpeg";
+    }
+
+    const fileName = `${type}/${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}.${contentType.split("/")[1]}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("exercise-images")
+      .upload(fileName, imageBuffer, { contentType: contentType });
+
+    if (uploadError) throw uploadError;
+
+    // 4. 🔗 GET PUBLIC URL
+    const { data: publicUrlData } = supabase.storage
+      .from("exercise-images")
+      .getPublicUrl(fileName);
+
+    const finalUrl = publicUrlData.publicUrl;
+
+    // 5. 💾 SAVE TO CACHE DB
+    await supabase.from("image_cache").insert({
+      prompt: cacheKey,
+      image_url: finalUrl,
     });
+
+    return NextResponse.json({ imageUrl: finalUrl });
   } catch (error: any) {
-    console.error("❌ Image generation error:", error);
+    console.error("Image Logic Error:", error);
     return NextResponse.json(
-      { error: "Failed to generate image", details: error.message },
+      { error: "Failed to generate image" },
       { status: 500 }
     );
   }

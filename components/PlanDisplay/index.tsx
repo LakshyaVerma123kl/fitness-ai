@@ -18,9 +18,10 @@ import {
   ShoppingBag,
   Heart,
   AlertTriangle,
+  CalendarPlus,
 } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
-
+import { downloadCalendar } from "../../utils/calendarExport";
 // Sub Components
 import WorkoutView from "./WorkoutView";
 import DietView from "./DietView";
@@ -398,6 +399,21 @@ export default function PlanDisplay({
         >
           {speaking ? <VolumeX size={16} /> : <Volume2 size={16} />}{" "}
           {speaking ? "Stop" : "Listen"}
+        </button>
+
+        <button
+          onClick={() => {
+            downloadCalendar(plan);
+            setToast({
+              show: true,
+              message: "📅 Added to Calendar!",
+              type: "success",
+            });
+          }}
+          className="px-3 md:px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center justify-center gap-2 text-sm"
+        >
+          <CalendarPlus size={16} />{" "}
+          <span className="hidden sm:inline">Add to Cal</span>
         </button>
 
         <button

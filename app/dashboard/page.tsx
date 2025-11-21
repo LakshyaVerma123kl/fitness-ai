@@ -76,7 +76,7 @@ export default function Dashboard() {
           const newestPlan = plansData[0];
           setLatestGoal(newestPlan.user_data?.goal);
 
-          // 2. Trigger Auto-Progression Check
+          // 2. Trigger Auto-Progression Check on the newest plan
           await checkAutoProgression(newestPlan);
         }
       }
@@ -89,7 +89,7 @@ export default function Dashboard() {
 
   // --- 🧠 Auto-Progression Logic ---
   const checkAutoProgression = async (currentPlan: any) => {
-    // 1. Debounce check: Don't check if we already checked today
+    // 1. Debounce: Don't check if we already checked today
     const lastCheck = localStorage.getItem(
       `progression_check_${currentPlan.id}`
     );
@@ -126,25 +126,34 @@ export default function Dashboard() {
     }
   };
 
-  const handleAutoRegenerate = async () => {
-    if (!plans[0]) return;
+  // --- 🚀 Manual Regeneration (Retry / Internal Level Up) ---
+  const handleManualRegenerate = async (targetPlan: any, adaptive: boolean) => {
+    setLoading(true);
+    setSelectedPlan(null); // Close view to show loading
 
-    const userData = plans[0].user_data;
+    const userData = targetPlan.user_data;
     const nextUserData = { ...userData };
 
-    // Increase Difficulty Logic
-    if (progressionType === "levelup") {
+    // 🧠 Level Up Logic
+    if (adaptive) {
       if (userData.level === "Beginner") nextUserData.level = "Intermediate";
       else if (userData.level === "Intermediate")
         nextUserData.level = "Advanced";
-      // You could also slightly increase weights or change goals here
+      setToast({
+        show: true,
+        message: "⚡️ Leveling up your plan...",
+        type: "success",
+      });
+    } else {
+      setToast({
+        show: true,
+        message: "🔄 Regenerating plan...",
+        type: "success",
+      });
     }
 
-    setLoading(true);
-    setShowProgressionModal(false);
-
     try {
-      // 1. Generate New Plan
+      // 1. Generate
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -154,28 +163,53 @@ export default function Dashboard() {
       if (!res.ok) throw new Error("Generation failed");
       const newPlan = await res.json();
 
-      // 2. Save New Plan
+      // 2. Save
       await fetch("/api/plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: newPlan, userData: nextUserData }),
       });
 
-      // 3. Refresh Dashboard
+      // 3. Send Email (if opted in and leveling up)
+      if (
+        adaptive &&
+        userData.emailNotifications &&
+        user?.primaryEmailAddress?.emailAddress
+      ) {
+        fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: user.primaryEmailAddress.emailAddress,
+            name: user.firstName || "Athlete",
+            type: "levelup",
+          }),
+        });
+      }
+
+      // 4. Refresh
       await fetchPlansAndCheckProgress();
       setToast({
         show: true,
-        message: "🚀 Plan Leveled Up Successfully!",
+        message: adaptive ? "🚀 Level Up Complete!" : "✅ Plan Regenerated!",
         type: "success",
       });
     } catch (error) {
       setToast({
         show: true,
-        message: "Failed to level up plan.",
+        message: "Failed to update plan.",
         type: "error",
       });
       setLoading(false);
     }
+  };
+
+  // --- 🤖 Auto Regeneration (Triggered by Modal) ---
+  const handleAutoRegenerate = async () => {
+    if (!plans[0]) return;
+    setShowProgressionModal(false); // Close modal
+    // Reuse manual logic with adaptive=true
+    await handleManualRegenerate(plans[0], true);
   };
 
   // --- Delete Handlers ---
@@ -219,10 +253,35 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-[var(--color-dark)] text-[var(--color-text)] transition-colors duration-300">
         <nav className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex justify-between items-center z-50">
-          <h1 className="text-xl sm:text-2xl font-black tracking-tighter text-[var(--color-text)]">
-            FITNESS<span className="text-[var(--color-primary)]">AI</span>
-          </h1>
+          <Link href="/" className="hover:opacity-80 transition">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tighter text-[var(--color-text)]">
+              FITNESS<span className="text-[var(--color-primary)]">AI</span>
+            </h1>
+          </Link>
           <div className="flex items-center gap-3">
+            {mounted && (
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-2 hover:bg-[var(--color-card)] rounded-full border border-transparent hover:border-[var(--color-border)] transition"
+              >
+                {theme === "dark" ? (
+                  <Sun className="text-[var(--color-primary)]" size={20} />
+                ) : (
+                  <Moon className="text-[var(--color-primary)]" size={20} />
+                )}
+              </button>
+            )}
+
+            {/* Home Button Added Here */}
+            <Link href="/">
+              <button
+                className="p-2 hover:bg-[var(--color-card)] rounded-full transition border border-transparent hover:border-[var(--color-border)]"
+                title="Home"
+              >
+                <Home size={20} className="text-[var(--color-primary)]" />
+              </button>
+            </Link>
+
             <button
               onClick={() => setSelectedPlan(null)}
               className="px-3 sm:px-4 py-2 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg text-xs sm:text-sm font-medium hover:opacity-80 flex items-center gap-2 transition text-[var(--color-text)]"
@@ -238,10 +297,14 @@ export default function Dashboard() {
             />
           </div>
         </nav>
+        {/* Passed handleManualRegenerate to PlanDisplay for Retry/LevelUp buttons */}
         <PlanDisplay
           plan={selectedPlan.plan_data}
           userData={selectedPlan.user_data}
           reset={() => setSelectedPlan(null)}
+          onRegenerate={(adaptive) =>
+            handleManualRegenerate(selectedPlan, adaptive)
+          }
         />
       </div>
     );
@@ -271,6 +334,17 @@ export default function Dashboard() {
                 )}
               </button>
             )}
+
+            {/* Home Button Added Here */}
+            <Link href="/">
+              <button
+                className="p-2 hover:bg-[var(--color-card)] rounded-full transition border border-transparent hover:border-[var(--color-border)]"
+                title="Home"
+              >
+                <Home size={20} className="text-[var(--color-primary)]" />
+              </button>
+            </Link>
+
             <UserButton
               appearance={{
                 elements: {
