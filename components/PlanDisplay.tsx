@@ -19,6 +19,11 @@ import {
   X,
   Share2,
   Activity,
+  Calendar,
+  TrendingUp,
+  Zap,
+  Youtube,
+  ChefHat,
 } from "lucide-react";
 import {
   PieChart,
@@ -61,15 +66,28 @@ export default function PlanDisplay({
   // 📊 Calculate Macros for Chart
   const macroData = useMemo(() => {
     if (!hasDiet) return [];
+
+    // Priority: Use explicit macros from API if available
+    if (plan.diet.macros) {
+      return [
+        { name: "Protein", value: parseInt(plan.diet.macros.protein) || 0 },
+        { name: "Carbs", value: parseInt(plan.diet.macros.carbs) || 0 },
+        { name: "Fats", value: parseInt(plan.diet.macros.fats) || 0 },
+      ];
+    }
+
+    // Fallback: Sum up meals
     let p = 0,
       c = 0,
       f = 0;
-
-    Object.values(plan.diet).forEach((meal: any) => {
-      p += parseInt(meal.protein) || 0;
-      c += parseInt(meal.carbs) || 0;
-      f += parseInt(meal.fats) || 0;
-    });
+    const mealsSource = plan.diet.meals || plan.diet;
+    if (mealsSource) {
+      Object.values(mealsSource).forEach((meal: any) => {
+        p += parseInt(meal.protein) || 0;
+        c += parseInt(meal.carbs) || 0;
+        f += parseInt(meal.fats) || 0;
+      });
+    }
 
     return [
       { name: "Protein", value: p },
@@ -78,15 +96,23 @@ export default function PlanDisplay({
     ];
   }, [plan.diet]);
 
-  // 🛍️ Generate Shopping List
+  // 🛒 Generate Shopping List
   const shoppingList = useMemo(() => {
     if (!hasDiet) return [];
     const items: string[] = [];
-    Object.values(plan.diet).forEach((meal: any) => {
+
+    const mealsSource = plan.diet.meals || plan.diet;
+
+    Object.values(mealsSource).forEach((meal: any) => {
       if (meal.portion) items.push(meal.portion);
     });
+
+    if (plan.supplements && Array.isArray(plan.supplements)) {
+      plan.supplements.forEach((s: string) => items.push(`Supplement: ${s}`));
+    }
+
     return items;
-  }, [plan.diet]);
+  }, [plan.diet, plan.supplements]);
 
   // ✅ Toggle Exercise Checkbox
   const toggleExercise = (name: string) => {
@@ -121,8 +147,9 @@ export default function PlanDisplay({
 
     if (section === "diet" || section === "all") {
       textToSpeak += "Here is your Diet Plan. ";
+      const mealsSource = plan.diet.meals || plan.diet;
       if (hasDiet) {
-        Object.entries(plan.diet).forEach(
+        Object.entries(mealsSource).forEach(
           ([mealType, details]: [string, any]) => {
             textToSpeak += `For ${mealType}, have ${details?.meal}. `;
           }
@@ -165,12 +192,10 @@ export default function PlanDisplay({
     const doc = new jsPDF();
     const margin = 14;
 
-    // Title
     doc.setFontSize(22);
     doc.setTextColor(40, 40, 40);
     doc.text("Your Personalized Fitness Plan", margin, 20);
 
-    // Subtitle
     doc.setFontSize(12);
     doc.setTextColor(100, 100, 100);
     doc.text(
@@ -179,15 +204,32 @@ export default function PlanDisplay({
       30
     );
 
-    // Quote
-    if (plan.motivation_quote) {
-      doc.setFontSize(10);
-      doc.setTextColor(80, 80, 80);
-      doc.setFont("helvetica", "italic");
-      doc.text(`"${plan.motivation_quote}"`, margin, 40);
-    }
+    let yPos = 45;
 
-    let yPos = 50;
+    // Timeline
+    if (plan.results_timeline) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.text("Projected Timeline", margin, yPos);
+      yPos += 7;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Expected Start: ${plan.results_timeline.estimated_start}`,
+        margin,
+        yPos
+      );
+      yPos += 6;
+
+      if (plan.results_timeline.milestones) {
+        plan.results_timeline.milestones.forEach((m: string) => {
+          doc.text(`• ${m}`, margin, yPos);
+          yPos += 6;
+        });
+      }
+      yPos += 10;
+    }
 
     // Table: Workout
     if (hasWorkout) {
@@ -209,7 +251,7 @@ export default function PlanDisplay({
         head: [["Day", "Focus Area", "Exercises"]],
         body: workoutRows,
         theme: "grid",
-        headStyles: { fillColor: [59, 130, 246] }, // Blue
+        headStyles: { fillColor: [59, 130, 246] },
         styles: { fontSize: 10, cellPadding: 4 },
       });
 
@@ -223,7 +265,19 @@ export default function PlanDisplay({
       doc.text("Nutrition Plan", margin, yPos);
       yPos += 8;
 
-      const dietRows = Object.entries(plan.diet).map(
+      if (plan.diet.strategy) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Week 1 Focus: ${plan.diet.strategy.week_1}`, margin, yPos);
+        yPos += 6;
+        doc.text(`Week 2 Focus: ${plan.diet.strategy.week_2}`, margin, yPos);
+        yPos += 10;
+        doc.setTextColor(0, 0, 0);
+      }
+
+      const mealsSource = plan.diet.meals || plan.diet;
+      const dietRows = Object.entries(mealsSource).map(
         ([meal, details]: [string, any]) => [
           meal.toUpperCase(),
           details.meal,
@@ -236,7 +290,7 @@ export default function PlanDisplay({
         head: [["Meal", "Suggestion", "Macros"]],
         body: dietRows,
         theme: "grid",
-        headStyles: { fillColor: [16, 185, 129] }, // Green
+        headStyles: { fillColor: [16, 185, 129] },
         styles: { fontSize: 10, cellPadding: 4 },
       });
 
@@ -260,7 +314,6 @@ export default function PlanDisplay({
       doc.text(listText, margin, yPos);
     }
 
-    // Footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -302,6 +355,8 @@ export default function PlanDisplay({
     window.open(url, "_blank");
   };
 
+  const mealsSource = plan.diet?.meals || plan.diet;
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 md:space-y-8 pb-20 px-4 md:px-6">
       {/* Header & Quote */}
@@ -338,8 +393,62 @@ export default function PlanDisplay({
         </div>
       </div>
 
-      {/* Global Actions - Responsive Grid/Flex */}
-      {/* On mobile: Grid 2 cols. On Desktop: Flex Row centered */}
+      {/* 📅 Results Timeline Section */}
+      {plan.results_timeline && (
+        <div className="glass-card p-5 md:p-6 rounded-2xl bg-white/5 border border-white/10">
+          <div className="flex flex-col md:flex-row md:items-start gap-6">
+            <div className="shrink-0 flex items-center gap-3 md:w-1/4">
+              <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400">
+                <Calendar size={24} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  Projected Timeline
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Based on consistency
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 grid gap-4 sm:grid-cols-2">
+              <div className="p-4 bg-black/20 rounded-xl border border-white/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp size={16} className="text-green-400" />
+                  <h4 className="text-sm font-bold text-gray-200">
+                    Expected Start
+                  </h4>
+                </div>
+                <p className="text-sm text-white">
+                  {plan.results_timeline.estimated_start}
+                </p>
+              </div>
+              <div className="p-4 bg-black/20 rounded-xl border border-white/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Activity size={16} className="text-yellow-400" />
+                  <h4 className="text-sm font-bold text-gray-200">
+                    Key Milestones
+                  </h4>
+                </div>
+                <ul className="space-y-1">
+                  {plan.results_timeline.milestones?.map(
+                    (m: string, i: number) => (
+                      <li
+                        key={i}
+                        className="text-xs text-gray-300 flex items-start gap-2"
+                      >
+                        <span className="text-yellow-500 mt-0.5">•</span> {m}
+                      </li>
+                    )
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Actions */}
       <div className="grid grid-cols-2 sm:flex flex-wrap gap-3 justify-center">
         <button
           onClick={() => speakPlan("all")}
@@ -380,7 +489,7 @@ export default function PlanDisplay({
         )}
       </div>
 
-      {/* TABS NAVIGATION - Horizontal Scroll enabled */}
+      {/* TABS NAVIGATION */}
       <div className="flex justify-start sm:justify-center gap-2 md:gap-4 border-b border-white/10 pb-0 overflow-x-auto no-scrollbar snap-x">
         {[
           { id: "workout", label: "Workout", icon: Dumbbell },
@@ -432,7 +541,6 @@ export default function PlanDisplay({
                       {day.exercises?.map((ex: any, j: number) => (
                         <div
                           key={j}
-                          // Mobile: Flex-Col (Stacked). Desktop: Flex-Row (Inline)
                           className={`p-3 md:p-4 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group ${
                             completedExercises.has(ex.name)
                               ? "bg-green-900/20 border border-green-500/30"
@@ -469,20 +577,33 @@ export default function PlanDisplay({
                             </div>
                           </div>
 
-                          {/* Demo Button: Visible by default on Mobile, Hover-only on Desktop */}
-                          <button
-                            onClick={() =>
-                              generateImage(
-                                `fitness exercise: ${ex.name}, proper form, cinematic lighting`,
-                                "exercise"
-                              )
-                            }
-                            className="w-full sm:w-auto p-2 bg-white/5 sm:bg-transparent rounded-lg text-blue-400 flex items-center justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all hover:bg-white/10"
-                            title="Generate Demo Image"
-                          >
-                            <ImageIcon size={18} />
-                            <span className="sm:hidden text-xs">Show Demo</span>
-                          </button>
+                          {/* Action Buttons: Demo + YouTube */}
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <a
+                              href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
+                                ex.name + " exercise form"
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors flex-1 sm:flex-none flex justify-center"
+                              title="Watch Tutorial on YouTube"
+                            >
+                              <Youtube size={18} />
+                            </a>
+
+                            <button
+                              onClick={() =>
+                                generateImage(
+                                  `fitness exercise: ${ex.name}, proper form, cinematic lighting`,
+                                  "exercise"
+                                )
+                              }
+                              className="p-2 bg-white/5 rounded-lg text-blue-400 flex items-center justify-center gap-2 opacity-100 transition-all hover:bg-white/10 flex-1 sm:flex-none"
+                              title="Generate AI Demo Image"
+                            >
+                              <ImageIcon size={18} />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -505,6 +626,57 @@ export default function PlanDisplay({
               exit={{ opacity: 0, y: -20 }}
               className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8"
             >
+              {/* Diet Strategies & Supplements */}
+              <div className="lg:col-span-3 grid md:grid-cols-2 gap-4">
+                {/* Weekly Strategies */}
+                {plan.diet.strategy && (
+                  <div className="p-5 rounded-2xl bg-linear-to-br from-blue-900/20 to-purple-900/20 border border-white/10">
+                    <h4 className="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                      <Zap size={16} className="text-yellow-400" /> Weekly
+                      Strategy
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">
+                          Week 1
+                        </p>
+                        <p className="text-sm text-gray-300">
+                          {plan.diet.strategy.week_1}
+                        </p>
+                      </div>
+                      <div className="border-t border-white/10 pt-3">
+                        <p className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-1">
+                          Week 2
+                        </p>
+                        <p className="text-sm text-gray-300">
+                          {plan.diet.strategy.week_2}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Supplements */}
+                {plan.supplements && (
+                  <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+                    <h4 className="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                      <Activity size={16} className="text-green-400" />{" "}
+                      Recommended Supplements
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {plan.supplements.map((item: string, i: number) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1 rounded-full bg-black/30 border border-white/10 text-xs text-gray-300"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Macro Chart Column */}
               <div className="lg:col-span-1 glass-card p-4 md:p-6 rounded-2xl bg-black/20 h-fit lg:sticky lg:top-4 order-1 lg:order-1">
                 <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
@@ -562,8 +734,8 @@ export default function PlanDisplay({
 
               {/* Meals Column */}
               <div className="lg:col-span-2 space-y-4 order-2 lg:order-2">
-                {hasDiet
-                  ? Object.entries(plan.diet).map(
+                {hasDiet && mealsSource
+                  ? Object.entries(mealsSource).map(
                       ([mealType, details]: [string, any]) => (
                         <div
                           key={mealType}
@@ -585,18 +757,33 @@ export default function PlanDisplay({
                               <h4 className="capitalize text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">
                                 {mealType}
                               </h4>
-                              <button
-                                onClick={() =>
-                                  generateImage(
-                                    `${details.meal}, professional food photography, appetizing, 4k`,
-                                    "food"
-                                  )
-                                }
-                                className="text-gray-500 hover:text-blue-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                                title="See this meal"
-                              >
-                                <ImageIcon size={16} />
-                              </button>
+                              <div className="flex gap-2">
+                                {/* Recipe Search Button */}
+                                <a
+                                  href={`https://www.google.com/search?q=${encodeURIComponent(
+                                    "healthy recipe for " + details.meal
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-gray-500 hover:text-green-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                  title="Find Recipe"
+                                >
+                                  <ChefHat size={16} />
+                                </a>
+                                {/* AI Image Button */}
+                                <button
+                                  onClick={() =>
+                                    generateImage(
+                                      `${details.meal}, professional food photography, appetizing, 4k`,
+                                      "food"
+                                    )
+                                  }
+                                  className="text-gray-500 hover:text-blue-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                  title="Visualize Meal"
+                                >
+                                  <ImageIcon size={16} />
+                                </button>
+                              </div>
                             </div>
                             <h3 className="text-base md:text-lg font-bold text-white mb-2 wrap-break-words">
                               {details.meal}
@@ -612,6 +799,9 @@ export default function PlanDisplay({
                                 {details.fats} Fats
                               </span>
                             </div>
+                            <p className="text-xs text-gray-400 mt-2 italic border-t border-white/5 pt-2">
+                              Portion: {details.portion}
+                            </p>
                           </div>
                         </div>
                       )
@@ -621,7 +811,7 @@ export default function PlanDisplay({
             </motion.div>
           )}
 
-          {/* 🛍️ SHOPPING LIST TAB */}
+          {/* 🛒 SHOPPING LIST TAB */}
           {activeTab === "shopping" && (
             <motion.div
               key="shopping"
@@ -669,7 +859,7 @@ export default function PlanDisplay({
         </AnimatePresence>
       </div>
 
-      {/* Image Modal - Responsive Sizing */}
+      {/* Image Modal */}
       {imageModalData && (
         <div
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
