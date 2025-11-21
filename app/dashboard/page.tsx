@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
+  const [latestGoal, setLatestGoal] = useState<string>(""); // State for the goal
 
   // State for Delete Modal
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
@@ -53,7 +54,13 @@ export default function Dashboard() {
     try {
       const res = await fetch("/api/plans");
       const data = await res.json();
-      if (Array.isArray(data)) setPlans(data);
+      if (Array.isArray(data)) {
+        setPlans(data);
+        // Extract goal from the newest plan (index 0 because backend sorts DESC)
+        if (data.length > 0 && data[0].user_data?.goal) {
+          setLatestGoal(data[0].user_data.goal);
+        }
+      }
     } catch (err) {
       console.error("Failed to load plans", err);
     } finally {
@@ -208,8 +215,9 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {/* Pass userGoal to ProgressTracker */}
         <div className="mb-12">
-          <ProgressTracker userId={user?.id || ""} />
+          <ProgressTracker userId={user?.id || ""} userGoal={latestGoal} />
         </div>
 
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-[var(--color-border)] pt-8">

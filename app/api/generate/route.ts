@@ -43,12 +43,12 @@ async function callGroq(prompt: string, model: string) {
           {
             role: "system",
             content:
-              "You are an expert fitness coach. Return ONLY valid JSON. Do not include markdown formatting.",
+              "You are an expert fitness coach and nutritionist with medical knowledge. Prioritize safety and health. Return ONLY valid JSON. Do not include markdown formatting.",
           },
           { role: "user", content: prompt },
         ],
         temperature: 0.7,
-        max_tokens: 3500,
+        max_tokens: 4000,
       }),
     }
   );
@@ -79,7 +79,7 @@ async function callHuggingFace(prompt: string, model: string) {
       body: JSON.stringify({
         inputs: prompt,
         parameters: {
-          max_new_tokens: 3500,
+          max_new_tokens: 4000,
           temperature: 0.7,
           return_full_text: false,
         },
@@ -114,7 +114,14 @@ export async function POST(req: Request) {
       diet,
       equipment,
       medicalHistory,
+      allergies,
+      medications,
+      injuries,
+      chronicConditions,
+      sleepHours,
+      waterIntake,
       stressLevel,
+      activityLevel,
     } = body;
 
     // Basic Physics Validation
@@ -125,91 +132,243 @@ export async function POST(req: Request) {
       );
     }
 
-    // Calculate BMI locally to assist the AI
+    // Calculate BMI and BMR locally
     const heightInMeters = height / 100;
     const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
 
-    // 🧠 THE MEGA PROMPT
-    const prompt = `You are an elite Personal Trainer and Nutritionist.
-    Generate a highly detailed, JSON-only response. No markdown, no intro text.
-    
-    USER PROFILE:
-    - Name: ${name || "Athlete"}
-    - Bio: ${age}yrs, ${gender}, ${weight}kg, ${height}cm (BMI: ${bmi})
-    - Goal: ${goal}
-    - Experience: ${level}
-    - Diet Pref: ${diet}
-    - Access: ${equipment}
-    - Stress: ${stressLevel || "Average"}
-    ${medicalHistory ? `- Medical Notes: ${medicalHistory}` : ""}
+    // Calculate BMR using Mifflin-St Jeor Equation
+    let bmr;
+    if (gender === "Male") {
+      bmr = Math.round(10 * weight + 6.25 * height - 5 * age + 5);
+    } else if (gender === "Female") {
+      bmr = Math.round(10 * weight + 6.25 * height - 5 * age - 161);
+    } else {
+      bmr = Math.round(10 * weight + 6.25 * height - 5 * age - 78);
+    }
 
-    REQUIREMENTS:
-    1. RESULTS TIMELINE: Be honest. When will they see changes?
-    2. DIET STRATEGY: Explain how Week 1 differs from Week 2 (e.g., adaptation vs optimization).
-    3. WORKOUT: 3-5 days based on level.
-    4. MACROS: Calculate specific grams for Protein/Carbs/Fats.
-    
-    REQUIRED JSON STRUCTURE:
+    // Activity multipliers
+    const activityMultipliers: { [key: string]: number } = {
+      Sedentary: 1.2,
+      "Lightly Active": 1.375,
+      "Moderately Active": 1.55,
+      "Very Active": 1.725,
+    };
+
+    const tdee = Math.round(bmr * (activityMultipliers[activityLevel] || 1.2));
+
+    // Build comprehensive health context
+    const healthContext = [];
+
+    if (allergies) {
+      healthContext.push(`🚨 ALLERGIES: ${allergies}`);
+    }
+    if (chronicConditions) {
+      healthContext.push(`⚕️ CHRONIC CONDITIONS: ${chronicConditions}`);
+    }
+    if (injuries) {
+      healthContext.push(`🩹 INJURIES: ${injuries}`);
+    }
+    if (medications) {
+      healthContext.push(`💊 MEDICATIONS: ${medications}`);
+    }
+    if (medicalHistory) {
+      healthContext.push(`📋 MEDICAL NOTES: ${medicalHistory}`);
+    }
+
+    const healthInfo =
+      healthContext.length > 0
+        ? `\n\n⚠️ CRITICAL HEALTH CONSIDERATIONS:\n${healthContext.join(
+            "\n"
+          )}\n\nYou MUST consider these factors when creating the plan. Modify exercises to accommodate injuries. Exclude allergenic foods. Adjust intensity for chronic conditions. Include safety warnings.`
+        : "";
+
+    // 🧠 THE ENHANCED MEGA PROMPT
+    const prompt = `You are an elite Personal Trainer, Nutritionist, and Health Professional.
+Generate a highly detailed, SAFE, and personalized fitness plan in JSON format only. No markdown, no intro text.
+
+USER PROFILE:
+- Name: ${name || "Athlete"}
+- Bio: ${age}yrs, ${gender}, ${weight}kg, ${height}cm (BMI: ${bmi})
+- BMR: ${bmr} kcal/day | TDEE: ${tdee} kcal/day
+- Goal: ${goal}
+- Experience: ${level}
+- Diet Preference: ${diet}
+- Equipment Access: ${equipment}
+- Activity Level: ${activityLevel}
+- Sleep: ${sleepHours} hours/night
+- Water Intake: ${waterIntake}L/day
+- Stress Level: ${stressLevel}${healthInfo}
+
+CRITICAL SAFETY REQUIREMENTS:
+1. If user has injuries, MODIFY exercises to avoid affected areas
+2. If user has chronic conditions (diabetes, hypertension, etc.), adjust intensity and include monitoring advice
+3. If user has allergies, EXCLUDE those foods completely from meal plan
+4. If user takes medications, consider their effects (e.g., blood thinners = avoid high-risk exercises)
+5. Include specific warnings and modifications in the plan
+
+PLAN REQUIREMENTS:
+1. SAFETY FIRST: Address all medical concerns explicitly
+2. RESULTS TIMELINE: Be honest about when they'll see changes
+3. DIET STRATEGY: Week-by-week progression with allergy considerations
+4. WORKOUT: 3-5 days with injury modifications if needed
+5. MACROS: Calculate based on TDEE and goal (deficit/surplus/maintenance)
+6. HYDRATION & RECOVERY: Specific to their lifestyle
+
+REQUIRED JSON STRUCTURE:
+{
+  "safety_warnings": [
+    "Specific warning 1 based on health conditions",
+    "Specific warning 2",
+    "Consult doctor before starting if X condition present"
+  ],
+  "motivation_quote": "Short, punchy, personalized quote",
+  "results_timeline": {
+    "estimated_start": "e.g., 2-4 weeks (may vary with medical conditions)",
+    "milestones": [
+      "Week 2: Initial adaptation phase",
+      "Week 4: Visible changes begin",
+      "Week 8: Significant transformation",
+      "Week 12: Goal milestone achieved"
+    ]
+  },
+  "health_considerations": {
+    "modifications": "Specific modifications for injuries/conditions",
+    "monitoring": "What to track (blood sugar, blood pressure, pain levels, etc.)",
+    "red_flags": "Warning signs to stop and consult doctor"
+  },
+  "tips": [
+    "Tip 1 relevant to their profile",
+    "Tip 2 considering health factors",
+    "Tip 3 for recovery",
+    "Tip 4 for consistency"
+  ],
+  "workout": [
     {
-      "motivation_quote": "Short, punchy quote",
-      "results_timeline": {
-        "estimated_start": "e.g., 3-4 weeks",
-        "milestones": [
-          "Week 2: Energy levels stabilize",
-          "Week 4: Visible definition / weight change",
-          "Week 8: Significant transformation"
-        ]
-      },
-      "tips": ["Tip 1", "Tip 2", "Tip 3"],
-      "workout": [
-        {
-          "day": "Day 1",
-          "focus": "Push / Pull / Legs etc",
-          "exercises": [
-            { "name": "Exercise Name", "sets": "3", "reps": "10-12", "rest": "60s" }
-          ]
+      "day": "Day 1",
+      "focus": "Push / Pull / Legs / Cardio / Recovery",
+      "duration": "45-60 mins",
+      "intensity": "Low/Moderate/High (adjusted for health)",
+      "exercises": [
+        { 
+          "name": "Exercise Name", 
+          "sets": "3", 
+          "reps": "10-12", 
+          "rest": "60s",
+          "calories": "50",
+          "modification": "Alternative if user has injury"
         }
       ],
-      "diet": {
-        "strategy": {
-          "week_1": "Focus on...",
-          "week_2": "Shift focus to..."
-        },
-        "macros": {
-          "protein": "150g",
-          "carbs": "200g",
-          "fats": "60g"
-        },
-        "meals": {
-          "breakfast": { 
-            "meal": "Name of meal", 
-            "calories": "400", 
-            "protein": "30g", "carbs": "40g", "fats": "10g",
-            "portion": "Exact ingredients (e.g., 2 eggs, 1 slice toast)"
-          },
-          "lunch": { 
-            "meal": "Name of meal", 
-            "calories": "600",
-            "protein": "40g", "carbs": "50g", "fats": "20g",
-            "portion": "Exact ingredients"
-          },
-          "snack": { 
-             "meal": "Name of meal", 
-             "calories": "200",
-             "protein": "15g", "carbs": "20g", "fats": "5g",
-             "portion": "Exact ingredients"
-          },
-          "dinner": { 
-             "meal": "Name of meal", 
-             "calories": "500",
-             "protein": "35g", "carbs": "40g", "fats": "15g",
-             "portion": "Exact ingredients"
-          }
-        }
+      "notes": "Specific guidance for this workout day"
+    }
+  ],
+  "diet": {
+    "strategy": {
+      "week_1": "Focus on adaptation, establish eating patterns",
+      "week_2": "Optimize macros, increase variety",
+      "week_3_4": "Fine-tune based on progress",
+      "allergy_notes": "Foods avoided and alternatives used"
+    },
+    "calorie_target": {
+      "daily": "${
+        goal === "Weight Loss"
+          ? tdee - 500
+          : goal === "Muscle Gain"
+          ? tdee + 300
+          : tdee
+      } kcal",
+      "explanation": "Why this target based on TDEE and goal"
+    },
+    "macros": {
+      "protein": "Xg (based on body weight and goal)",
+      "carbs": "Xg (adjusted for activity and conditions)",
+      "fats": "Xg (minimum for hormonal health)"
+    },
+    "meals": {
+      "breakfast": { 
+        "meal": "Name of meal", 
+        "calories": "400", 
+        "protein": "30g", 
+        "carbs": "40g", 
+        "fats": "15g",
+        "portion": "Exact ingredients with measurements",
+        "prep_time": "10 mins",
+        "allergy_safe": "Yes/No with alternatives"
       },
-      "supplements": ["Creatine", "Whey Protein", "Multivitamin"],
-      "daily_calories": "Total Kcal"
-    }`;
+      "mid_morning_snack": { 
+        "meal": "Name", 
+        "calories": "150",
+        "protein": "10g", 
+        "carbs": "15g", 
+        "fats": "5g",
+        "portion": "Exact ingredients",
+        "prep_time": "5 mins"
+      },
+      "lunch": { 
+        "meal": "Name", 
+        "calories": "500",
+        "protein": "40g", 
+        "carbs": "50g", 
+        "fats": "20g",
+        "portion": "Exact ingredients",
+        "prep_time": "15 mins",
+        "allergy_safe": "Yes/No with alternatives"
+      },
+      "afternoon_snack": { 
+        "meal": "Name", 
+        "calories": "200",
+        "protein": "15g", 
+        "carbs": "20g", 
+        "fats": "8g",
+        "portion": "Exact ingredients",
+        "prep_time": "5 mins"
+      },
+      "dinner": { 
+        "meal": "Name", 
+        "calories": "550",
+        "protein": "45g", 
+        "carbs": "45g", 
+        "fats": "20g",
+        "portion": "Exact ingredients",
+        "prep_time": "20 mins",
+        "allergy_safe": "Yes/No with alternatives"
+      },
+      "evening_snack": {
+        "meal": "Optional light snack",
+        "calories": "100",
+        "protein": "8g",
+        "carbs": "10g",
+        "fats": "3g",
+        "portion": "Exact ingredients",
+        "prep_time": "2 mins"
+      }
+    }
+  },
+  "hydration": {
+    "target": "Based on their weight and activity (${Math.round(
+      weight * 0.033
+    )}L minimum)",
+    "timing": "When and how much to drink",
+    "signs_of_dehydration": ["Dark urine", "Fatigue", "Dizziness"]
+  },
+  "recovery": {
+    "sleep_target": "7-9 hours (they currently get ${sleepHours})",
+    "rest_days": "How many per week and why",
+    "stress_management": "Techniques based on their ${stressLevel} stress level",
+    "stretching": "Daily routine for flexibility and injury prevention"
+  },
+  "supplements": [
+    "Supplement 1 with reason and dosage",
+    "Supplement 2 (avoid if on certain medications)",
+    "Note: Consult doctor before starting new supplements"
+  ],
+  "progress_tracking": {
+    "measurements": ["Weight", "Body measurements", "Progress photos"],
+    "performance": ["Strength gains", "Endurance improvements", "Flexibility"],
+    "health_metrics": ["Energy levels", "Sleep quality", "Mood", "Medical markers if applicable"]
+  }
+}
+
+Generate a comprehensive, safe, and personalized plan now.`;
 
     // 🔄 Provider Fallback Logic
     let lastError = null;
@@ -243,7 +402,6 @@ export async function POST(req: Request) {
         }
 
         // 🧹 CLEAN & PARSE RESPONSE
-        // AI sometimes adds ```json or text before/after. We strip it.
         let cleanedText = responseText.trim();
         cleanedText = cleanedText
           .replace(/```json\s*/gi, "")
@@ -260,32 +418,45 @@ export async function POST(req: Request) {
         cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
         const parsedData = JSON.parse(cleanedText);
 
-        // 🛡️ STRUCTURE VALIDATION
+        // 🛡️ ENHANCED STRUCTURE VALIDATION
         if (!parsedData.workout || !Array.isArray(parsedData.workout)) {
           throw new Error("Invalid workout structure received");
         }
         if (!parsedData.diet || !parsedData.diet.meals) {
           throw new Error("Invalid diet structure received");
         }
+        if (
+          !parsedData.safety_warnings ||
+          !Array.isArray(parsedData.safety_warnings)
+        ) {
+          // Add default safety warning if missing
+          parsedData.safety_warnings = [
+            "Consult with a healthcare provider before starting any new fitness program.",
+          ];
+        }
 
-        // ✅ SUCCESS
+        // ✅ SUCCESS - Add metadata
         return NextResponse.json({
           ...parsedData,
-          _provider: providerName,
-          _bmi: bmi,
-          _generatedAt: new Date().toISOString(),
+          _metadata: {
+            provider: providerName,
+            bmi: bmi,
+            bmr: bmr,
+            tdee: tdee,
+            generatedAt: new Date().toISOString(),
+            hasHealthConditions: healthContext.length > 0,
+            healthFactorsConsidered: healthContext.length,
+          },
         });
       } catch (error: any) {
         lastError = error;
         const errorMsg = error.message || String(error);
         console.warn(`⚠️ ${providerName} failed: ${errorMsg}`);
 
-        // If this was the last provider, break the loop
         if (i === PROVIDERS.length - 1) {
           break;
         }
 
-        // Slight delay before retrying next provider
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }

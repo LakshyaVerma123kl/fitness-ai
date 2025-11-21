@@ -1,7 +1,14 @@
 "use client";
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Loader2, ChevronRight, User, Heart } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Loader2,
+  ChevronRight,
+  User,
+  Heart,
+  AlertCircle,
+  ChevronDown,
+} from "lucide-react";
 import Toast from "./Toast";
 
 interface FitnessFormProps {
@@ -21,7 +28,14 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
     diet: "Non-Veg",
     equipment: "Gym",
     medicalHistory: "",
+    allergies: "",
+    medications: "",
+    injuries: "",
+    chronicConditions: "",
+    sleepHours: "7-8",
+    waterIntake: "2-3",
     stressLevel: "Medium",
+    activityLevel: "Sedentary",
   });
 
   const [toast, setToast] = useState<{
@@ -29,6 +43,9 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
     message: string;
     type: "success" | "error" | "warning";
   } | null>(null);
+
+  const [showLifestyleSection, setShowLifestyleSection] = useState(false);
+  const [showHealthSection, setShowHealthSection] = useState(false);
 
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -51,13 +68,21 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
     onSubmit(formData);
   };
 
+  // 🎨 Standardized Styles for Light/Dark Mode Compatibility
+  // These use your CSS variables instead of hardcoded colors like 'text-white'
+  const inputClass =
+    "w-full p-2.5 sm:p-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg focus:border-primary focus:outline-none text-[var(--color-text)] placeholder-[var(--color-text-secondary)] text-sm sm:text-base transition-colors";
+
+  const labelClass =
+    "block text-xs sm:text-sm text-[var(--color-text-secondary)] mb-1.5 sm:mb-2 font-medium";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="glass-card w-full max-w-2xl p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl mx-auto relative"
     >
-      {/* Header - Responsive */}
+      {/* Header */}
       <div className="flex items-center justify-center gap-2 sm:gap-3 mb-5 sm:mb-6">
         <User className="text-primary" size={24} />
         <h2 className="text-2xl sm:text-3xl font-bold text-center text-primary">
@@ -68,42 +93,36 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
       <div className="space-y-3 sm:space-y-4">
         {/* Name */}
         <div>
-          <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-            Full Name *
-          </label>
+          <label className={labelClass}>Full Name *</label>
           <input
             type="text"
             name="name"
             placeholder="Enter your name"
             value={formData.name}
-            className="w-full p-2.5 sm:p-3 bg-white/5 border border-white/10 rounded-lg focus:border-primary focus:outline-none text-white placeholder-gray-500 text-sm sm:text-base"
+            className={inputClass}
             onChange={handleChange}
           />
         </div>
 
-        {/* Age, Gender, Weight - Responsive grid */}
+        {/* Age, Gender, Weight */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div>
-            <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-              Age *
-            </label>
+            <label className={labelClass}>Age *</label>
             <input
               type="number"
               name="age"
               placeholder="Age"
               value={formData.age}
-              className="w-full p-2.5 sm:p-3 bg-white/5 border border-white/10 rounded-lg focus:border-primary focus:outline-none text-white placeholder-gray-500 text-sm sm:text-base"
+              className={inputClass}
               onChange={handleChange}
             />
           </div>
           <div>
-            <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-              Gender
-            </label>
+            <label className={labelClass}>Gender</label>
             <select
               name="gender"
               value={formData.gender}
-              className="w-full p-2.5 sm:p-3 bg-card border border-white/10 rounded-lg focus:border-primary text-white focus:outline-none text-sm sm:text-base"
+              className={inputClass}
               onChange={handleChange}
             >
               <option>Male</option>
@@ -112,15 +131,13 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             </select>
           </div>
           <div>
-            <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-              Weight (kg) *
-            </label>
+            <label className={labelClass}>Weight (kg) *</label>
             <input
               type="number"
               name="weight"
               placeholder="Weight"
               value={formData.weight}
-              className="w-full p-2.5 sm:p-3 bg-white/5 border border-white/10 rounded-lg focus:border-primary focus:outline-none text-white placeholder-gray-500 text-sm sm:text-base"
+              className={inputClass}
               onChange={handleChange}
             />
           </div>
@@ -128,29 +145,25 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
 
         {/* Height */}
         <div>
-          <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-            Height (cm) *
-          </label>
+          <label className={labelClass}>Height (cm) *</label>
           <input
             type="number"
             name="height"
             placeholder="Height in centimeters"
             value={formData.height}
-            className="w-full p-2.5 sm:p-3 bg-white/5 border border-white/10 rounded-lg focus:border-primary focus:outline-none text-white placeholder-gray-500 text-sm sm:text-base"
+            className={inputClass}
             onChange={handleChange}
           />
         </div>
 
-        {/* Goal and Level - Responsive grid */}
+        {/* Goal and Level */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-              Fitness Goal
-            </label>
+            <label className={labelClass}>Fitness Goal</label>
             <select
               name="goal"
               value={formData.goal}
-              className="w-full p-2.5 sm:p-3 bg-card border border-white/10 rounded-lg focus:border-primary text-white focus:outline-none text-sm sm:text-base"
+              className={inputClass}
               onChange={handleChange}
             >
               <option>Weight Loss</option>
@@ -161,13 +174,11 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             </select>
           </div>
           <div>
-            <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-              Fitness Level
-            </label>
+            <label className={labelClass}>Fitness Level</label>
             <select
               name="level"
               value={formData.level}
-              className="w-full p-2.5 sm:p-3 bg-card border border-white/10 rounded-lg focus:border-primary text-white focus:outline-none text-sm sm:text-base"
+              className={inputClass}
               onChange={handleChange}
             >
               <option>Beginner</option>
@@ -177,16 +188,14 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
           </div>
         </div>
 
-        {/* Diet and Equipment - Responsive grid */}
+        {/* Diet and Equipment */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-              Diet Preference
-            </label>
+            <label className={labelClass}>Diet Preference</label>
             <select
               name="diet"
               value={formData.diet}
-              className="w-full p-2.5 sm:p-3 bg-card border border-white/10 rounded-lg focus:border-primary text-white focus:outline-none text-sm sm:text-base"
+              className={inputClass}
               onChange={handleChange}
             >
               <option>Non-Veg</option>
@@ -197,13 +206,11 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             </select>
           </div>
           <div>
-            <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-              Equipment Access
-            </label>
+            <label className={labelClass}>Equipment Access</label>
             <select
               name="equipment"
               value={formData.equipment}
-              className="w-full p-2.5 sm:p-3 bg-card border border-white/10 rounded-lg focus:border-primary text-white focus:outline-none text-sm sm:text-base"
+              className={inputClass}
               onChange={handleChange}
             >
               <option>Gym</option>
@@ -214,44 +221,221 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
           </div>
         </div>
 
-        {/* Stress Level */}
-        <div>
-          <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
-            Current Stress Level
-          </label>
-          <select
-            name="stressLevel"
-            value={formData.stressLevel}
-            className="w-full p-2.5 sm:p-3 bg-card border border-white/10 rounded-lg focus:border-primary text-white focus:outline-none text-sm sm:text-base"
-            onChange={handleChange}
+        {/* Lifestyle Factors Section - Collapsible */}
+        <div className="pt-3 sm:pt-4 border-t border-[var(--color-border)]">
+          <button
+            type="button"
+            onClick={() => setShowLifestyleSection(!showLifestyleSection)}
+            className="w-full flex items-center justify-between p-3 hover:bg-[var(--color-card)]/50 rounded-lg transition-all group"
           >
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-          </select>
+            <div className="flex items-center gap-2">
+              <Heart size={18} className="text-primary" />
+              {/* FIXED: Changed text-white to text-[var(--color-text)] */}
+              <h3 className="text-sm sm:text-base font-semibold text-[var(--color-text)]">
+                Lifestyle Factors (Optional)
+              </h3>
+            </div>
+            <ChevronDown
+              size={20}
+              className={`text-primary transition-transform duration-300 ${
+                showLifestyleSection ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          <AnimatePresence>
+            {showLifestyleSection && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div>
+                      <label className={labelClass}>Daily Activity Level</label>
+                      <select
+                        name="activityLevel"
+                        value={formData.activityLevel}
+                        className={inputClass}
+                        onChange={handleChange}
+                      >
+                        <option>Sedentary</option>
+                        <option>Lightly Active</option>
+                        <option>Moderately Active</option>
+                        <option>Very Active</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Sleep (hours/night)</label>
+                      <select
+                        name="sleepHours"
+                        value={formData.sleepHours}
+                        className={inputClass}
+                        onChange={handleChange}
+                      >
+                        <option>Less than 5</option>
+                        <option>5-6</option>
+                        <option>7-8</option>
+                        <option>More than 8</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Water Intake (L/day)</label>
+                      <select
+                        name="waterIntake"
+                        value={formData.waterIntake}
+                        className={inputClass}
+                        onChange={handleChange}
+                      >
+                        <option>Less than 1</option>
+                        <option>1-2</option>
+                        <option>2-3</option>
+                        <option>3-4</option>
+                        <option>More than 4</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Current Stress Level</label>
+                    <select
+                      name="stressLevel"
+                      value={formData.stressLevel}
+                      className={inputClass}
+                      onChange={handleChange}
+                    >
+                      <option>Low</option>
+                      <option>Medium</option>
+                      <option>High</option>
+                    </select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Medical History */}
-        <div>
-          <label className="block text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2 flex items-center gap-2">
-            <Heart size={14} className="sm:w-4 sm:h-4" />
-            Medical History / Injuries (Optional)
-          </label>
-          <textarea
-            name="medicalHistory"
-            placeholder="e.g., Lower back pain, knee injury, diabetes..."
-            value={formData.medicalHistory}
-            rows={3}
-            className="w-full p-2.5 sm:p-3 bg-white/5 border border-white/10 rounded-lg focus:border-primary focus:outline-none text-white placeholder-gray-500 resize-none text-sm sm:text-base"
-            onChange={handleChange}
-          />
+        {/* Health Information Section - Collapsible */}
+        <div className="pt-3 sm:pt-4 border-t border-[var(--color-border)]">
+          <button
+            type="button"
+            onClick={() => setShowHealthSection(!showHealthSection)}
+            className="w-full flex items-center justify-between p-3 hover:bg-[var(--color-card)]/50 rounded-lg transition-all group"
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle size={18} className="text-primary" />
+              {/* FIXED: Changed text-white to text-[var(--color-text)] */}
+              <h3 className="text-sm sm:text-base font-semibold text-[var(--color-text)]">
+                Health Information (Optional)
+              </h3>
+            </div>
+            <ChevronDown
+              size={20}
+              className={`text-primary transition-transform duration-300 ${
+                showHealthSection ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          <AnimatePresence>
+            {showHealthSection && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4">
+                  {/* Allergies */}
+                  <div>
+                    <label className={`${labelClass} flex items-center gap-2`}>
+                      <AlertCircle size={14} className="sm:w-4 sm:h-4" />
+                      Food Allergies / Intolerances
+                    </label>
+                    <textarea
+                      name="allergies"
+                      placeholder="e.g., Lactose intolerant, peanut allergy, gluten sensitivity..."
+                      value={formData.allergies}
+                      rows={2}
+                      className={`${inputClass} resize-none`}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  {/* Chronic Conditions */}
+                  <div>
+                    <label className={labelClass}>
+                      Chronic Conditions / Diseases
+                    </label>
+                    <textarea
+                      name="chronicConditions"
+                      placeholder="e.g., Diabetes, hypertension, thyroid issues, PCOS, asthma..."
+                      value={formData.chronicConditions}
+                      rows={2}
+                      className={`${inputClass} resize-none`}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  {/* Injuries */}
+                  <div>
+                    <label className={labelClass}>
+                      Current / Past Injuries
+                    </label>
+                    <textarea
+                      name="injuries"
+                      placeholder="e.g., Lower back pain, knee injury, shoulder impingement, ACL tear..."
+                      value={formData.injuries}
+                      rows={2}
+                      className={`${inputClass} resize-none`}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  {/* Medications */}
+                  <div>
+                    <label className={labelClass}>
+                      Current Medications / Supplements
+                    </label>
+                    <textarea
+                      name="medications"
+                      placeholder="e.g., Blood pressure medication, insulin, birth control, protein powder..."
+                      value={formData.medications}
+                      rows={2}
+                      className={`${inputClass} resize-none`}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  {/* General Medical History */}
+                  <div>
+                    <label className={labelClass}>
+                      Additional Medical Notes
+                    </label>
+                    <textarea
+                      name="medicalHistory"
+                      placeholder="Any other health concerns, family history, or relevant medical information..."
+                      value={formData.medicalHistory}
+                      rows={2}
+                      className={`${inputClass} resize-none`}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Submit Button - Responsive */}
+        {/* Submit Button */}
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="w-full py-3 sm:py-4 mt-3 sm:mt-4 bg-primary text-black font-bold rounded-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 text-sm sm:text-base"
+          className="w-full py-3 sm:py-4 mt-3 sm:mt-4 bg-primary text-black font-bold rounded-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 text-sm sm:text-base active:scale-[0.99]"
         >
           {isLoading ? (
             <>
@@ -265,17 +449,19 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             </>
           )}
         </button>
+      </div>
 
-        {/* Toast Notification */}
-        {toast?.show && (
+      {/* Toast Notification */}
+      {toast?.show && (
+        <div className="fixed top-4 right-4 sm:right-6 md:right-8 lg:right-12 z-50 w-[calc(100%-2rem)] sm:w-96 max-w-md">
           <Toast
             message={toast.message}
             type={toast.type}
             onClose={() => setToast(null)}
             duration={3000}
           />
-        )}
-      </div>
+        </div>
+      )}
     </motion.div>
   );
 }

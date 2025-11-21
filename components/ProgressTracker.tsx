@@ -57,12 +57,10 @@ export default function ProgressTracker({
     currentStreak: 0,
     longestStreak: 0,
   });
-  const [todayEntry, setTodayEntry] = useState<ProgressEntry>({
-    date: new Date().toISOString().split("T")[0],
-    weight: null,
-    mood: "",
-    workout_completed: false,
-  });
+
+  // ⚡️ Hydration Fix: Start as null, set in useEffect
+  const [todayEntry, setTodayEntry] = useState<ProgressEntry | null>(null);
+
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
@@ -72,6 +70,13 @@ export default function ProgressTracker({
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Initialize today's entry with correct client date
+    setTodayEntry({
+      date: new Date().toISOString().split("T")[0],
+      weight: null,
+      mood: "",
+      workout_completed: false,
+    });
     fetchProgress();
   }, []);
 
@@ -96,6 +101,7 @@ export default function ProgressTracker({
   };
 
   const handleSave = async () => {
+    if (!todayEntry) return;
     try {
       const res = await fetch("/api/progress", {
         method: "POST",
@@ -150,8 +156,7 @@ export default function ProgressTracker({
     });
   }, [entries]);
 
-  // Download PNG Handler
-  // Replace the handleDownloadImage function in your ProgressTracker.tsx with this:
+  // Download Image Handler
   const handleDownloadImage = async () => {
     if (!cardRef.current) return;
 
@@ -198,6 +203,13 @@ export default function ProgressTracker({
     { days: 14, icon: Award, label: "14 Day Streak", color: "text-yellow-400" },
     { days: 30, icon: Star, label: "Legend", color: "text-purple-400" },
   ];
+
+  // ⚡️ Loading State for Hydration Fix
+  if (!todayEntry) {
+    return (
+      <div className="w-full h-96 animate-pulse bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)]"></div>
+    );
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8">

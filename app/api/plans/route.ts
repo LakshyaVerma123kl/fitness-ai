@@ -9,6 +9,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// GET: Fetch all plans for the logged-in user
 export async function GET() {
   try {
     const { userId } = await auth();
@@ -17,11 +18,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fixed: Using 'user_id' to match the insert operation
     const { data, error } = await supabase
       .from("fitness_plans")
       .select("*")
-      .eq("user_id", userId) // Changed from 'clerk_id' to 'user_id'
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -39,6 +39,7 @@ export async function GET() {
   }
 }
 
+// POST: Save a new plan
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -57,21 +58,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate BMI
-    const heightInMeters = userData.height / 100;
-    const bmi = (userData.weight / (heightInMeters * heightInMeters)).toFixed(
-      1
-    );
+    // Calculate BMI based on user data
+    // Default to 0 if data is missing to prevent crash
+    const height = parseFloat(userData.height) || 0;
+    const weight = parseFloat(userData.weight) || 0;
+    let bmi = 0;
+
+    if (height > 0) {
+      const heightInMeters = height / 100;
+      bmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(1));
+    }
 
     const { data, error } = await supabase
       .from("fitness_plans")
       .insert([
         {
-          user_id: userId, // This matches the column in your database
+          user_id: userId,
           user_data: userData,
           plan_data: plan,
-          bmi: parseFloat(bmi),
-          provider: plan._provider || "AI",
+          bmi: bmi,
+          // Use optional chaining in case metadata is missing
+          provider: plan._metadata?.provider || "AI",
         },
       ])
       .select();
@@ -90,6 +97,8 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// DELETE: Remove a specific plan
 export async function DELETE(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -104,11 +113,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Missing plan ID" }, { status: 400 });
     }
 
+    // ⚠️ CRITICAL SECURITY CHECK
+    // We must .eq("user_id", userId) to ensure a user
+    // cannot delete someone else's plan by guessing an ID.
     const { error } = await supabase
       .from("fitness_plans")
       .delete()
       .eq("id", id)
-      .eq("user_id", userId); // Ensure user only deletes their own plan
+      .eq("user_id", userId);
 
     if (error) throw error;
 
