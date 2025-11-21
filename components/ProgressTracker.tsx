@@ -31,7 +31,7 @@ import {
 import { useUser } from "@clerk/nextjs";
 import html2canvas from "html2canvas";
 import Toast from "./Toast";
-import domtoimage from "dom-to-image-more";
+
 interface ProgressEntry {
   date: string;
   weight: number | null;
@@ -154,8 +154,10 @@ export default function ProgressTracker({
   // Replace the handleDownloadImage function in your ProgressTracker.tsx with this:
   const handleDownloadImage = async () => {
     if (!cardRef.current) return;
+
     try {
-      // @ts-ignore
+      const domtoimage = (await import("dom-to-image-more")).default;
+
       const dataUrl = await domtoimage.toPng(cardRef.current, {
         quality: 1,
         bgcolor: "#000000",

@@ -85,14 +85,15 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center relative bg-[var(--color-dark)] text-[var(--color-text)] transition-colors duration-300">
       {/* Navbar */}
-      <nav className="w-full max-w-6xl px-6 py-6 flex justify-between items-center z-50">
+      {/* Navbar */}
+      <nav className="w-full max-w-6xl px-4 sm:px-6 py-4 sm:py-6 flex justify-between items-center z-50">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-black tracking-tighter">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tighter">
             FITNESS<span className="text-[#00e599]">AI</span>
           </h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Theme Toggle */}
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -100,21 +101,21 @@ export default function Home() {
             aria-label="Toggle theme"
           >
             {theme === "dark" ? (
-              <Sun className="text-[#00e599]" size={20} />
+              <Sun className="text-[#00e599]" size={18} />
             ) : (
-              <Moon className="text-gray-600" size={20} />
+              <Moon className="text-gray-600" size={18} />
             )}
           </button>
 
           {/* Auth Buttons */}
           <SignedOut>
             <Link href="/sign-in">
-              <button className="px-4 py-2 text-sm font-medium hover:text-[#00e599] transition">
+              <button className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium hover:text-[#00e599] transition">
                 Sign In
               </button>
             </Link>
             <Link href="/sign-up">
-              <button className="px-4 py-2 bg-[#00e599] text-black text-sm font-bold rounded-lg hover:bg-[#00cc88] transition shadow-lg shadow-green-500/20">
+              <button className="px-3 sm:px-4 py-2 bg-[#00e599] text-black text-xs sm:text-sm font-bold rounded-lg hover:bg-[#00cc88] transition shadow-lg shadow-green-500/20">
                 Get Started
               </button>
             </Link>
@@ -122,13 +123,16 @@ export default function Home() {
 
           <SignedIn>
             <Link href="/dashboard">
-              <button className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 mr-4 flex items-center gap-2 transition">
-                <LayoutDashboard size={16} /> Dashboard
+              <button className="px-2 sm:px-4 py-2 bg-white/10 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/20 sm:mr-4 flex items-center gap-1 sm:gap-2 transition">
+                <LayoutDashboard size={16} className="sm:inline" />
+                <span className="hidden sm:inline">Dashboard</span>
               </button>
             </Link>
             <UserButton
               appearance={{
-                elements: { avatarBox: "w-9 h-9 border-2 border-[#00e599]" },
+                elements: {
+                  avatarBox: "w-8 h-8 sm:w-9 sm:h-9 border-2 border-[#00e599]",
+                },
               }}
             />
           </SignedIn>
