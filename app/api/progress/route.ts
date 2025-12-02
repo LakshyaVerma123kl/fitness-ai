@@ -4,16 +4,34 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Validate environment variables
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
+    );
+  }
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
 
 export async function GET() {
   try {
     const { userId } = await auth();
-    if (!userId)
+
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabase = getSupabaseClient();
 
     // 1. Fetch last 30 days for the chart
     const { data: recentData, error: recentError } = await supabase
@@ -23,7 +41,16 @@ export async function GET() {
       .order("date", { ascending: true })
       .limit(30);
 
-    if (recentError) throw recentError;
+    if (recentError) {
+      console.error("Recent data error:", recentError);
+      return NextResponse.json(
+        {
+          error: "Failed to fetch recent progress",
+          details: recentError.message,
+        },
+        { status: 500 }
+      );
+    }
 
     // 2. Fetch ALL completed dates to calculate streaks
     const { data: allCompleted, error: streakError } = await supabase
@@ -33,7 +60,13 @@ export async function GET() {
       .eq("workout_completed", true)
       .order("date", { ascending: false }); // Newest first
 
-    if (streakError) throw streakError;
+    if (streakError) {
+      console.error("Streak data error:", streakError);
+      return NextResponse.json(
+        { error: "Failed to fetch streak data", details: streakError.message },
+        { status: 500 }
+      );
+    }
 
     // 3. Calculate Streaks
     let currentStreak = 0;
@@ -101,18 +134,34 @@ export async function GET() {
       },
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error in GET /api/progress:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error.message,
+        hint: "Check environment variables and database connection",
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
-    if (!userId)
+
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await req.json();
     const { date, weight, mood, workout_completed } = body;
+
+    if (!date) {
+      return NextResponse.json({ error: "Date is required" }, { status: 400 });
+    }
+
+    const supabase = getSupabaseClient();
 
     const { data, error } = await supabase
       .from("daily_progress")
@@ -120,17 +169,32 @@ export async function POST(req: Request) {
         {
           user_id: userId,
           date,
-          weight,
-          mood,
-          workout_completed,
+          weight: weight || null,
+          mood: mood || null,
+          workout_completed: workout_completed || false,
         },
         { onConflict: "user_id, date" }
       )
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase upsert error:", error);
+      return NextResponse.json(
+        { error: "Failed to save progress", details: error.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error in POST /api/progress:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error.message,
+        hint: "Check environment variables and database connection",
+      },
+      { status: 500 }
+    );
   }
 }

@@ -7,13 +7,14 @@ import { NextResponse } from "next/server";
 
 // Free tier providers with fallback logic
 const PROVIDERS = [
-  { provider: "gemini", model: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-  { provider: "gemini", model: "gemini-pro", name: "Gemini Pro" },
   {
     provider: "groq",
     model: "llama-3.3-70b-versatile",
     name: "Groq Llama 3.3 70B",
   },
+  { provider: "gemini", model: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+  { provider: "gemini", model: "gemini-pro", name: "Gemini Pro" },
+
   {
     provider: "huggingface",
     model: "meta-llama/Llama-3.3-70B-Instruct",
