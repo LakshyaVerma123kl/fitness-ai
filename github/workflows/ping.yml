@@ -1,0 +1,14 @@
+name: Keep Supabase Warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every 10 minutes
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make requests
+        run: |
+          curl -s http://fitness-ai-beryl-theta.vercel.app/api/plan/ping || true
+          curl -s http://fitness-ai-beryl-theta.vercel.app/api/progress || true
