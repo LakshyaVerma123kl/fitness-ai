@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
+import path from "path";
 
-// We removed the strict ": NextConfig" here so TypeScript doesn't complain about the object shape
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  turbopack: {
+    resolveAlias: {
+      "@mediapipe/pose": "./utils/mediapipe-stub.js",
+    },
   },
   images: {
     remotePatterns: [
@@ -11,18 +13,12 @@ const nextConfig = {
         protocol: "https",
         hostname: "oaidalleapiprodscus.blob.core.windows.net",
       },
-      {
-        protocol: "https",
-        hostname: "replicate.delivery",
-      },
+      { protocol: "https", hostname: "replicate.delivery" },
     ],
   },
   experimental: {
-    serverActions: {
-      allowedOrigins: ["localhost:3000"],
-    },
+    serverActions: { allowedOrigins: ["localhost:3000"] },
   },
 };
 
-// Assert the type here on export instead
 export default nextConfig as NextConfig;
