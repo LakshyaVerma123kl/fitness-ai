@@ -175,8 +175,21 @@ export async function POST(req: Request) {
     // =========================================
     // 🧠 RAG: Fetch similar highly-rated plans
     // =========================================
-    const ragContext = await buildRagContext({ goal, age: Number(age), bmi });
-
+    const ragContext = await buildRagContext({
+      goal,
+      age: Number(age),
+      bmi,
+      gender: gender || "Other",
+      level: level || "Beginner",
+      diet: diet || "Standard",
+      equipment: equipment || "",
+      activityLevel: activityLevel || "Sedentary",
+      allergies,
+      injuries,
+      chronicConditions,
+      sleepHours: sleepHours ? Number(sleepHours) : undefined,
+      stressLevel: stressLevel,
+    });
     // =========================================
     // 🧠 PROMPT (RAG examples injected at top)
     // =========================================
