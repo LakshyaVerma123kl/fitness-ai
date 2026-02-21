@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const MEAL_ORDER = [
@@ -23,7 +23,7 @@ export const generateAndDownloadPDF = (
   plan: any,
   userData: any,
   shoppingList: string[],
-  setToast: (toast: any) => void
+  setToast: (toast: any) => void,
 ) => {
   try {
     const doc = new jsPDF();
@@ -91,7 +91,7 @@ export const generateAndDownloadPDF = (
         doc.setFont("helvetica", "normal");
         const modLines = doc.splitTextToSize(
           plan.health_considerations.modifications,
-          170
+          170,
         );
         modLines.forEach((line: string) => {
           doc.text(line, margin + 5, healthY);
@@ -107,7 +107,7 @@ export const generateAndDownloadPDF = (
         doc.setFont("helvetica", "normal");
         const flagLines = doc.splitTextToSize(
           plan.health_considerations.red_flags,
-          170
+          170,
         );
         flagLines.forEach((line: string) => {
           doc.text(line, margin + 5, healthY);
@@ -134,7 +134,7 @@ export const generateAndDownloadPDF = (
       doc.text(
         `Expected Start: ${plan.results_timeline.estimated_start}`,
         margin,
-        yPos
+        yPos,
       );
       yPos += 6;
       if (plan.results_timeline.milestones) {
@@ -168,7 +168,7 @@ export const generateAndDownloadPDF = (
         if (plan.hydration.timing) {
           const timingLines = doc.splitTextToSize(
             `Timing: ${plan.hydration.timing}`,
-            180
+            180,
           );
           timingLines.forEach((line: string) => {
             doc.text(line, margin, yPos);
@@ -185,7 +185,7 @@ export const generateAndDownloadPDF = (
         if (plan.recovery.stress_management) {
           const stressLines = doc.splitTextToSize(
             `Stress Management: ${plan.recovery.stress_management}`,
-            180
+            180,
           );
           stressLines.forEach((line: string) => {
             doc.text(line, margin, yPos);
@@ -256,13 +256,13 @@ export const generateAndDownloadPDF = (
         doc.text(
           `Daily Target: ${plan.diet.calorie_target.daily}`,
           margin,
-          yPos
+          yPos,
         );
         yPos += 5;
         if (plan.diet.calorie_target.explanation) {
           const expLines = doc.splitTextToSize(
             plan.diet.calorie_target.explanation,
-            180
+            180,
           );
           expLines.forEach((line: string) => {
             doc.text(line, margin, yPos);
@@ -279,7 +279,7 @@ export const generateAndDownloadPDF = (
         doc.text(
           `Macros: Protein: ${plan.diet.macros.protein}, Carbs: ${plan.diet.macros.carbs}, Fats: ${plan.diet.macros.fats}`,
           margin,
-          yPos
+          yPos,
         );
         yPos += 10;
       }
@@ -370,7 +370,7 @@ export const generateAndDownloadPDF = (
         doc.setFont("helvetica", "normal");
         const allergyLines = doc.splitTextToSize(
           plan.diet.strategy.allergy_notes,
-          180
+          180,
         );
         allergyLines.forEach((line: string) => {
           doc.text(line, margin, yPos);
@@ -473,13 +473,13 @@ export const generateAndDownloadPDF = (
       doc.text(
         `Health Factors Considered: ${plan._metadata.healthFactorsConsidered}`,
         margin,
-        yPos
+        yPos,
       );
       yPos += 5;
       doc.text(
         `Generated: ${new Date(plan._metadata.generatedAt).toLocaleString()}`,
         margin,
-        yPos
+        yPos,
       );
     }
 
