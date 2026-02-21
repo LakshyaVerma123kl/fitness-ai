@@ -1,4 +1,5 @@
 "use client";
+// app/dashboard/page.tsx — RAG-enhanced version
 import { useEffect, useState } from "react";
 import { useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
@@ -10,6 +11,8 @@ import {
   Loader2,
   Plus,
   ArrowLeft,
+  CheckCircle,
+  Send,
   Moon,
   Sun,
   Home,
@@ -17,31 +20,161 @@ import {
   AlertTriangle,
   X,
   Award,
+  Star,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PlanDisplay from "@/components/PlanDisplay";
 import ProgressTracker from "@/components/ProgressTracker";
-import Toast from "@/components/Toast";
 
+import Toast from "@/components/Toast";
+// Paste this BEFORE `export default function Dashboard()`
+// Also add  Star, Send, CheckCircle  to your lucide-react imports
+
+function FeedbackWidget({
+  planId,
+  onDone,
+}: {
+  planId: string;
+  onDone?: () => void;
+}) {
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [note, setNote] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [fbLoading, setFbLoading] = useState(false);
+  const [fbError, setFbError] = useState("");
+
+  const ratingLabels: { [k: number]: string } = {
+    1: "Not helpful",
+    2: "Could be better",
+    3: "Pretty good",
+    4: "Great plan!",
+    5: "Absolutely loved it! 🔥",
+  };
+
+  const handleSubmit = async () => {
+    if (!rating) return;
+    setFbLoading(true);
+    setFbError("");
+    try {
+      const res = await fetch("/api/plans/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId, rating, feedbackNote: note }),
+      });
+      if (!res.ok) throw new Error("Failed to submit feedback");
+      setSubmitted(true);
+      setTimeout(() => onDone?.(), 1500);
+    } catch (e: any) {
+      setFbError(e.message || "Something went wrong");
+    } finally {
+      setFbLoading(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center gap-3 py-6"
+      >
+        <CheckCircle size={40} className="text-[var(--color-primary)]" />
+        <p className="font-bold text-[var(--color-text)]">
+          Thanks for your feedback! 🙌
+        </p>
+        <p className="text-xs text-[var(--color-text-secondary)] text-center max-w-xs">
+          Your rating helps improve plans for everyone with a similar profile.
+        </p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col gap-4"
+    >
+      <div className="flex justify-center gap-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onMouseEnter={() => setHovered(star)}
+            onMouseLeave={() => setHovered(0)}
+            onClick={() => setRating(star)}
+            className="transition-transform hover:scale-110 active:scale-95"
+          >
+            <Star
+              size={32}
+              className={`transition-colors ${
+                star <= (hovered || rating)
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-[var(--color-border)] fill-transparent"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait">
+        {(hovered || rating) > 0 && (
+          <motion.p
+            key={hovered || rating}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-center text-sm font-semibold text-[var(--color-primary)]"
+          >
+            {ratingLabels[hovered || rating]}
+          </motion.p>
+        )}
+      </AnimatePresence>
+      {rating > 0 && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+        >
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Any feedback? What worked / what didn't? (optional)"
+            rows={2}
+            className="w-full p-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] placeholder-[var(--color-text-secondary)] focus:border-[var(--color-primary)] focus:outline-none resize-none transition-colors"
+          />
+        </motion.div>
+      )}
+      {fbError && <p className="text-xs text-red-400 text-center">{fbError}</p>}
+      <button
+        onClick={handleSubmit}
+        disabled={!rating || fbLoading}
+        className="w-full py-3 rounded-xl bg-[var(--color-primary)] text-black font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-primary-dark)] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+      >
+        {fbLoading ? (
+          <span className="animate-pulse">Submitting…</span>
+        ) : (
+          <>
+            <Send size={16} /> Submit Feedback
+          </>
+        )}
+      </button>
+    </motion.div>
+  );
+}
 export default function Dashboard() {
   const { user, isLoaded } = useUser();
   const { theme, setTheme } = useTheme();
 
-  // --- State Management ---
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
   const [latestGoal, setLatestGoal] = useState<string>("");
 
-  // Delete Modal State
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
-
-  // Auto-Progression State
   const [showProgressionModal, setShowProgressionModal] = useState(false);
-  const [progressionType, setProgressionType] = useState<
-    "levelup" | "maintain"
-  >("maintain");
+
+  // ── Feedback state ────────────────────────────────────────────
+  const [feedbackPlanId, setFeedbackPlanId] = useState<string | null>(null);
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -49,34 +182,24 @@ export default function Dashboard() {
     type: "success" | "error" | "warning";
   } | null>(null);
 
-  // Prevent Hydration Mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Fetch Data on Load
   useEffect(() => {
-    if (isLoaded && user) {
-      fetchPlansAndCheckProgress();
-    }
+    if (isLoaded && user) fetchPlansAndCheckProgress();
   }, [isLoaded, user]);
 
-  // --- Core Data Fetching ---
   const fetchPlansAndCheckProgress = async () => {
     try {
-      // 1. Fetch User Plans
       const plansRes = await fetch("/api/plans");
       const plansData = await plansRes.json();
 
       if (Array.isArray(plansData)) {
         setPlans(plansData);
-
-        // If we have plans, extract the latest goal and check for progression
         if (plansData.length > 0) {
           const newestPlan = plansData[0];
           setLatestGoal(newestPlan.user_data?.goal);
-
-          // 2. Trigger Auto-Progression Check on the newest plan
           await checkAutoProgression(newestPlan);
         }
       }
@@ -87,90 +210,71 @@ export default function Dashboard() {
     }
   };
 
-  // --- 🧠 Auto-Progression Logic ---
   const checkAutoProgression = async (currentPlan: any) => {
-    // 1. Debounce: Don't check if we already checked today
     const lastCheck = localStorage.getItem(
-      `progression_check_${currentPlan.id}`
+      `progression_check_${currentPlan.id}`,
     );
     const todayStr = new Date().toISOString().split("T")[0];
     if (lastCheck === todayStr) return;
 
-    // 2. Calculate Plan Age
     const planDate = new Date(currentPlan.created_at);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - planDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(
+      Math.abs(new Date().getTime() - planDate.getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
 
-    // 3. Only check if plan is at least 7 days old
     if (diffDays >= 7) {
       const progressRes = await fetch("/api/progress");
       const progressData = await progressRes.json();
-
       if (progressData.entries) {
-        // Get entries from the last 7 days
-        const last7DaysEntries = progressData.entries.slice(-7);
-        const completedCount = last7DaysEntries.filter(
-          (e: any) => e.workout_completed
-        ).length;
-
-        // IF: Completed 5+ workouts in last 7 days -> Level Up
-        if (completedCount >= 5) {
-          setProgressionType("levelup");
-          setShowProgressionModal(true);
-        }
+        const completedCount = progressData.entries
+          .slice(-7)
+          .filter((e: any) => e.workout_completed).length;
+        if (completedCount >= 5) setShowProgressionModal(true);
       }
-
-      // Mark checked for today
       localStorage.setItem(`progression_check_${currentPlan.id}`, todayStr);
     }
   };
 
-  // --- 🚀 Manual Regeneration (Retry / Internal Level Up) ---
   const handleManualRegenerate = async (targetPlan: any, adaptive: boolean) => {
     setLoading(true);
-    setSelectedPlan(null); // Close view to show loading
+    setSelectedPlan(null);
 
     const userData = targetPlan.user_data;
     const nextUserData = { ...userData };
 
-    // 🧠 Level Up Logic
     if (adaptive) {
       if (userData.level === "Beginner") nextUserData.level = "Intermediate";
       else if (userData.level === "Intermediate")
         nextUserData.level = "Advanced";
       setToast({
         show: true,
-        message: "⚡️ Leveling up your plan...",
+        message: "⚡️ Leveling up your plan…",
         type: "success",
       });
     } else {
       setToast({
         show: true,
-        message: "🔄 Regenerating plan...",
+        message: "🔄 Regenerating plan…",
         type: "success",
       });
     }
 
     try {
-      // 1. Generate
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nextUserData),
       });
-
       if (!res.ok) throw new Error("Generation failed");
       const newPlan = await res.json();
 
-      // 2. Save
       await fetch("/api/plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: newPlan, userData: nextUserData }),
       });
 
-      // 3. Send Email (if opted in and leveling up)
       if (
         adaptive &&
         userData.emailNotifications &&
@@ -187,14 +291,13 @@ export default function Dashboard() {
         });
       }
 
-      // 4. Refresh
       await fetchPlansAndCheckProgress();
       setToast({
         show: true,
         message: adaptive ? "🚀 Level Up Complete!" : "✅ Plan Regenerated!",
         type: "success",
       });
-    } catch (error) {
+    } catch {
       setToast({
         show: true,
         message: "Failed to update plan.",
@@ -204,15 +307,12 @@ export default function Dashboard() {
     }
   };
 
-  // --- 🤖 Auto Regeneration (Triggered by Modal) ---
   const handleAutoRegenerate = async () => {
     if (!plans[0]) return;
-    setShowProgressionModal(false); // Close modal
-    // Reuse manual logic with adaptive=true
+    setShowProgressionModal(false);
     await handleManualRegenerate(plans[0], true);
   };
 
-  // --- Delete Handlers ---
   const handleDeleteClick = (planId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setPlanToDelete(planId);
@@ -227,17 +327,14 @@ export default function Dashboard() {
       if (res.ok) {
         setPlans(plans.filter((p) => p.id !== planToDelete));
         setToast({ show: true, message: "Plan deleted", type: "success" });
-      } else {
-        throw new Error("Failed");
-      }
-    } catch (error) {
+      } else throw new Error("Failed");
+    } catch {
       setToast({ show: true, message: "Error deleting plan", type: "error" });
     } finally {
       setPlanToDelete(null);
     }
   };
 
-  // --- Loading State ---
   if (!isLoaded)
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--color-dark)]">
@@ -248,7 +345,7 @@ export default function Dashboard() {
       </div>
     );
 
-  // --- Detailed Plan View ---
+  // ── Detailed plan view ────────────────────────────────────────
   if (selectedPlan) {
     return (
       <div className="min-h-screen bg-[var(--color-dark)] text-[var(--color-text)] transition-colors duration-300">
@@ -271,8 +368,6 @@ export default function Dashboard() {
                 )}
               </button>
             )}
-
-            {/* Home Button Added Here */}
             <Link href="/">
               <button
                 className="p-2 hover:bg-[var(--color-card)] rounded-full transition border border-transparent hover:border-[var(--color-border)]"
@@ -281,7 +376,6 @@ export default function Dashboard() {
                 <Home size={20} className="text-[var(--color-primary)]" />
               </button>
             </Link>
-
             <button
               onClick={() => setSelectedPlan(null)}
               className="px-3 sm:px-4 py-2 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg text-xs sm:text-sm font-medium hover:opacity-80 flex items-center gap-2 transition text-[var(--color-text)]"
@@ -297,7 +391,6 @@ export default function Dashboard() {
             />
           </div>
         </nav>
-        {/* Passed handleManualRegenerate to PlanDisplay for Retry/LevelUp buttons */}
         <PlanDisplay
           plan={selectedPlan.plan_data}
           userData={selectedPlan.user_data}
@@ -310,7 +403,7 @@ export default function Dashboard() {
     );
   }
 
-  // --- Main Dashboard View ---
+  // ── Main dashboard view ───────────────────────────────────────
   return (
     <div className="min-h-screen bg-[var(--color-dark)] text-[var(--color-text)] p-4 sm:p-6 md:p-12 transition-colors duration-300 relative">
       <div className="max-w-6xl mx-auto">
@@ -334,8 +427,6 @@ export default function Dashboard() {
                 )}
               </button>
             )}
-
-            {/* Home Button Added Here */}
             <Link href="/">
               <button
                 className="p-2 hover:bg-[var(--color-card)] rounded-full transition border border-transparent hover:border-[var(--color-border)]"
@@ -344,7 +435,6 @@ export default function Dashboard() {
                 <Home size={20} className="text-[var(--color-primary)]" />
               </button>
             </Link>
-
             <UserButton
               appearance={{
                 elements: {
@@ -371,7 +461,7 @@ export default function Dashboard() {
           <ProgressTracker userId={user?.id || ""} userGoal={latestGoal} />
         </div>
 
-        {/* Plans Grid Header */}
+        {/* Plans header */}
         <div className="mb-6 sm:mb-8 flex justify-between items-center gap-4 border-t border-[var(--color-border)] pt-8">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 text-[var(--color-text)]">
             <Calendar size={20} className="text-[var(--color-primary)]" /> Your
@@ -384,7 +474,7 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Plans Grid */}
+        {/* Plans grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {loading ? (
             <div className="col-span-full flex justify-center py-20">
@@ -429,6 +519,41 @@ export default function Dashboard() {
                       <span className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">
                         {new Date(item.created_at).toLocaleDateString()}
                       </span>
+
+                      {/* ── Rate button (only if not yet rated) ── */}
+                      {!item.rating && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFeedbackPlanId(item.id);
+                          }}
+                          className="p-2 hover:bg-yellow-400/10 rounded-full text-[var(--color-text-secondary)] hover:text-yellow-400 transition-colors z-10"
+                          title="Rate this plan"
+                        >
+                          <Star size={16} />
+                        </button>
+                      )}
+
+                      {/* Show rating stars if already rated */}
+                      {item.rating && (
+                        <div
+                          className="flex items-center gap-0.5"
+                          title={`Rated ${item.rating}/5`}
+                        >
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              size={12}
+                              className={
+                                s <= item.rating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-600"
+                              }
+                            />
+                          ))}
+                        </div>
+                      )}
+
                       <button
                         onClick={(e) => handleDeleteClick(item.id, e)}
                         className="p-2 hover:bg-red-500/10 rounded-full text-[var(--color-text-secondary)] hover:text-red-500 transition-colors z-10"
@@ -438,6 +563,7 @@ export default function Dashboard() {
                       </button>
                     </div>
                   </div>
+
                   <h3 className="text-base sm:text-lg font-bold mb-2 text-[var(--color-text)]">
                     {item.user_data.gender}, {item.user_data.age}yo
                   </h3>
@@ -461,7 +587,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- AUTO PROGRESSION MODAL --- */}
+      {/* ── Auto-progression modal ────────────────────────────── */}
       <AnimatePresence>
         {showProgressionModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
@@ -471,7 +597,7 @@ export default function Dashboard() {
               exit={{ opacity: 0, scale: 0.9 }}
               className="glass-card w-full max-w-md p-8 rounded-3xl border border-[var(--color-primary)] shadow-[0_0_50px_rgba(0,229,153,0.2)] relative bg-[var(--color-card)]"
             >
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-[var(--color-primary)]"></div>
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-[var(--color-primary)]" />
               <div className="flex flex-col items-center text-center">
                 <div className="p-4 bg-[var(--color-primary)]/10 rounded-full mb-6 border border-[var(--color-primary)]/20">
                   <Award size={48} className="text-[var(--color-primary)]" />
@@ -480,21 +606,19 @@ export default function Dashboard() {
                   Level Up Available! 🚀
                 </h2>
                 <p className="text-[var(--color-text-secondary)] mb-6 leading-relaxed text-sm sm:text-base">
-                  You've been consistent for the last 7 days! Your body is ready
-                  for a bigger challenge. Shall we regenerate your plan for the{" "}
-                  <strong>Next Level</strong>?
+                  You've been consistent for the last 7 days! Shall we
+                  regenerate your plan for the <strong>Next Level</strong>?
                 </p>
-
                 <div className="grid grid-cols-2 gap-4 w-full">
                   <button
                     onClick={() => setShowProgressionModal(false)}
-                    className="py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] transition font-bold text-sm sm:text-base"
+                    className="py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] transition font-bold"
                   >
                     No, keep current
                   </button>
                   <button
                     onClick={handleAutoRegenerate}
-                    className="py-3 rounded-xl bg-gradient-to-r from-[var(--color-primary)] to-blue-500 text-black font-bold hover:opacity-90 transition shadow-lg text-sm sm:text-base"
+                    className="py-3 rounded-xl bg-gradient-to-r from-[var(--color-primary)] to-blue-500 text-black font-bold hover:opacity-90 transition shadow-lg"
                   >
                     Yes, Level Up!
                   </button>
@@ -505,7 +629,44 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* --- DELETE MODAL --- */}
+      {/* ── Feedback modal (rate existing plan from card) ──────── */}
+      <AnimatePresence>
+        {feedbackPlanId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="glass-card w-full max-w-sm p-6 rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-card)] relative shadow-2xl"
+            >
+              <button
+                onClick={() => setFeedbackPlanId(null)}
+                className="absolute top-4 right-4 p-1.5 hover:bg-[var(--color-text)]/10 rounded-full transition"
+              >
+                <X size={18} className="text-[var(--color-text-secondary)]" />
+              </button>
+              <div className="mb-5">
+                <h3 className="text-lg font-black text-[var(--color-text)]">
+                  Rate this plan ⭐
+                </h3>
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                  Your rating improves plans for everyone with a similar
+                  profile.
+                </p>
+              </div>
+              <FeedbackWidget
+                planId={feedbackPlanId}
+                onDone={() => {
+                  setFeedbackPlanId(null);
+                  fetchPlansAndCheckProgress(); // refresh so star shows on card
+                }}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Delete modal ──────────────────────────────────────── */}
       <AnimatePresence>
         {planToDelete && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -551,7 +712,6 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* Toast Notification */}
       {toast?.show && (
         <Toast
           message={toast.message}

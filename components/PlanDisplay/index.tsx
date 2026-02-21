@@ -1,4 +1,5 @@
 "use client";
+// components/PlanDisplay/index.tsx  — RAG-enhanced version
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -7,6 +8,9 @@ import {
   Download,
   RefreshCw,
   Save,
+  Star,
+  Send,
+  CheckCircle,
   Share2,
   Sparkles,
   Activity,
@@ -19,20 +23,20 @@ import {
   Heart,
   AlertTriangle,
   CalendarPlus,
+  Zap,
+  X,
 } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 import { downloadCalendar } from "../../utils/calendarExport";
-// Sub Components
 import WorkoutView from "./WorkoutView";
 import DietView from "./DietView";
 import ShoppingView from "./ShoppingView";
 import HealthView from "./HealthView";
 import ImageModal from "./ImageModal";
 import Toast from "../Toast";
-
-// Utilities
 import { generateAndDownloadPDF } from "../../utils/pdfExports";
 import { generateGoogleCalendarUrl } from "../../utils/googleCalendar";
+
 const MEAL_ORDER = [
   "breakfast",
   "mid_morning_snack",
@@ -41,7 +45,140 @@ const MEAL_ORDER = [
   "dinner",
   "evening_snack",
 ];
+function FeedbackWidget({
+  planId,
+  onDone,
+}: {
+  planId: string;
+  onDone?: () => void;
+}) {
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [note, setNote] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [fbLoading, setFbLoading] = useState(false);
+  const [fbError, setFbError] = useState("");
 
+  const ratingLabels: { [k: number]: string } = {
+    1: "Not helpful",
+    2: "Could be better",
+    3: "Pretty good",
+    4: "Great plan!",
+    5: "Absolutely loved it! 🔥",
+  };
+
+  const handleSubmit = async () => {
+    if (!rating) return;
+    setFbLoading(true);
+    setFbError("");
+    try {
+      const res = await fetch("/api/plans/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId, rating, feedbackNote: note }),
+      });
+      if (!res.ok) throw new Error("Failed to submit feedback");
+      setSubmitted(true);
+      setTimeout(() => onDone?.(), 1500);
+    } catch (e: any) {
+      setFbError(e.message || "Something went wrong");
+    } finally {
+      setFbLoading(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center gap-3 py-6"
+      >
+        <CheckCircle size={40} className="text-[var(--color-primary)]" />
+        <p className="font-bold text-[var(--color-text)]">
+          Thanks for your feedback! 🙌
+        </p>
+        <p className="text-xs text-[var(--color-text-secondary)] text-center max-w-xs">
+          Your rating helps improve plans for everyone with a similar profile.
+        </p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col gap-4"
+    >
+      <div className="flex justify-center gap-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onMouseEnter={() => setHovered(star)}
+            onMouseLeave={() => setHovered(0)}
+            onClick={() => setRating(star)}
+            className="transition-transform hover:scale-110 active:scale-95"
+          >
+            <Star
+              size={32}
+              className={`transition-colors ${
+                star <= (hovered || rating)
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-[var(--color-border)] fill-transparent"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        {(hovered || rating) > 0 && (
+          <motion.p
+            key={hovered || rating}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-center text-sm font-semibold text-[var(--color-primary)]"
+          >
+            {ratingLabels[hovered || rating]}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      {rating > 0 && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+        >
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Any feedback? What worked / what didn't? (optional)"
+            rows={2}
+            className="w-full p-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] placeholder-[var(--color-text-secondary)] focus:border-[var(--color-primary)] focus:outline-none resize-none transition-colors"
+          />
+        </motion.div>
+      )}
+
+      {fbError && <p className="text-xs text-red-400 text-center">{fbError}</p>}
+
+      <button
+        onClick={handleSubmit}
+        disabled={!rating || fbLoading}
+        className="w-full py-3 rounded-xl bg-[var(--color-primary)] text-black font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-primary-dark)] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+      >
+        {fbLoading ? (
+          <span className="animate-pulse">Submitting…</span>
+        ) : (
+          <>
+            <Send size={16} /> Submit Feedback
+          </>
+        )}
+      </button>
+    </motion.div>
+  );
+}
 export default function PlanDisplay({
   plan,
   reset,
@@ -60,7 +197,7 @@ export default function PlanDisplay({
     "workout" | "diet" | "health" | "shopping"
   >("workout");
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const { isSignedIn } = useAuth();
   const [toast, setToast] = useState<{
@@ -69,11 +206,12 @@ export default function PlanDisplay({
     type: "success" | "error" | "warning";
   } | null>(null);
 
-  // Stop speech when component unmounts
+  // ── Feedback modal state ──────────────────────────────────────
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [savedPlanId, setSavedPlanId] = useState<string | null>(null);
+
   useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
+    return () => window.speechSynthesis.cancel();
   }, []);
 
   if (!plan) return null;
@@ -86,17 +224,16 @@ export default function PlanDisplay({
     plan.recovery ||
     plan.progress_tracking;
 
-  // --- Computed Values ---
   const totalExercises = useMemo(() => {
     if (!hasWorkout) return 0;
     return plan.workout.reduce(
       (acc: number, day: any) => acc + (day.exercises?.length || 0),
-      0
+      0,
     );
   }, [plan.workout]);
 
   const progressPercentage = Math.round(
-    (completedExercises.size / (totalExercises || 1)) * 100
+    (completedExercises.size / (totalExercises || 1)) * 100,
   );
 
   const shoppingList = useMemo(() => {
@@ -114,11 +251,11 @@ export default function PlanDisplay({
     return items;
   }, [plan.diet, plan.supplements]);
 
-  // --- Handlers ---
+  // ── Handlers ─────────────────────────────────────────────────
+
   const toggleExercise = (name: string) => {
     const newSet = new Set(completedExercises);
-    if (newSet.has(name)) newSet.delete(name);
-    else newSet.add(name);
+    newSet.has(name) ? newSet.delete(name) : newSet.add(name);
     setCompletedExercises(newSet);
   };
 
@@ -148,9 +285,7 @@ export default function PlanDisplay({
       if (hasDiet && mealsSource) {
         MEAL_ORDER.forEach((mealType) => {
           const details = mealsSource[mealType];
-          if (details) {
-            fullText += `For ${mealType}, have ${details.meal}. `;
-          }
+          if (details) fullText += `For ${mealType}, have ${details.meal}. `;
         });
       }
     }
@@ -160,9 +295,8 @@ export default function PlanDisplay({
       const utterance = new SpeechSynthesisUtterance(chunk.trim());
       utterance.rate = 1;
       utterance.pitch = 1;
-      if (index === chunks.length - 1) {
+      if (index === chunks.length - 1)
         utterance.onend = () => setSpeaking(false);
-      }
       window.speechSynthesis.speak(utterance);
     });
   };
@@ -170,18 +304,15 @@ export default function PlanDisplay({
   const generateImage = async (prompt: string, type: string) => {
     setGeneratingImage(true);
     setImageModalData({ prompt, type, image: null });
-
     try {
       const res = await fetch("/api/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, type }),
       });
-
       const data = await res.json();
-      if (data.imageUrl) {
+      if (data.imageUrl)
         setImageModalData({ prompt, type, image: data.imageUrl });
-      }
     } catch (error) {
       console.error("Image generation failed:", error);
     } finally {
@@ -189,6 +320,7 @@ export default function PlanDisplay({
     }
   };
 
+  // ── Save plan — opens feedback modal on success ───────────────
   const savePlan = async () => {
     if (!isSignedIn) {
       setToast({
@@ -205,6 +337,7 @@ export default function PlanDisplay({
         body: JSON.stringify({ plan, userData }),
       });
       const data = await res.json();
+
       if (res.status === 401) {
         setToast({
           show: true,
@@ -214,7 +347,15 @@ export default function PlanDisplay({
         return;
       }
       if (!res.ok) throw new Error(data.error || "Failed to save");
+
       setToast({ show: true, message: "✅ Plan saved!", type: "success" });
+
+      // Open feedback modal with the new plan's DB id
+      if (data?.data?.id) {
+        setSavedPlanId(data.data.id);
+        // Small delay so the save toast is readable first
+        setTimeout(() => setShowFeedbackModal(true), 1200);
+      }
     } catch (e: any) {
       setToast({
         show: true,
@@ -226,13 +367,24 @@ export default function PlanDisplay({
 
   const sharePlan = () => {
     const text = `Check out my AI Fitness Plan! Goal: ${userData?.goal}. \n\nQuote: "${plan.motivation_quote}"`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 md:space-y-8 pb-20 px-4 md:px-6">
-      {/* Header & Quote */}
+      {/* RAG badge — shows when plan was enhanced by similar user data */}
+      {plan._metadata?.ragEnhanced && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-center gap-2 text-xs font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-full px-4 py-1.5 w-fit mx-auto"
+        >
+          <Zap size={12} className="fill-[var(--color-primary)]" />
+          AI-enhanced using similar users' top-rated plans
+        </motion.div>
+      )}
+
+      {/* Motivation quote */}
       {plan.motivation_quote && (
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -248,41 +400,33 @@ export default function PlanDisplay({
         </motion.div>
       )}
 
-      {/* User Stats with BMR/TDEE */}
+      {/* Stats row */}
       <div className="flex flex-wrap justify-center gap-3 md:gap-4">
         {plan._metadata?.bmi && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
             <Activity size={14} className="text-blue-400" />
-            <span>
-              BMI: <strong>{plan._metadata.bmi}</strong>
-            </span>
+            BMI: <strong>{plan._metadata.bmi}</strong>
           </div>
         )}
         {plan._metadata?.bmr && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
             <TrendingUp size={14} className="text-green-400" />
-            <span>
-              BMR: <strong>{plan._metadata.bmr}</strong> kcal
-            </span>
+            BMR: <strong>{plan._metadata.bmr}</strong> kcal
           </div>
         )}
         {plan._metadata?.tdee && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
             <Activity size={14} className="text-purple-400" />
-            <span>
-              TDEE: <strong>{plan._metadata.tdee}</strong> kcal
-            </span>
+            TDEE: <strong>{plan._metadata.tdee}</strong> kcal
           </div>
         )}
         <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] text-xs md:text-sm text-[var(--color-text-secondary)] shadow-sm">
           <Dumbbell size={14} className="text-green-400" />
-          <span>
-            Level: <strong>{userData?.level || "N/A"}</strong>
-          </span>
+          Level: <strong>{userData?.level || "N/A"}</strong>
         </div>
       </div>
 
-      {/* Safety Warnings Banner */}
+      {/* Safety warnings banner */}
       {plan.safety_warnings && plan.safety_warnings.length > 0 && (
         <div className="p-4 md:p-5 rounded-xl bg-red-500/10 border-2 border-red-500/50 flex items-start gap-3">
           <AlertTriangle size={24} className="text-red-400 shrink-0 mt-1" />
@@ -355,7 +499,7 @@ export default function PlanDisplay({
                       >
                         <span className="text-yellow-500 mt-0.5">•</span> {m}
                       </li>
-                    )
+                    ),
                   )}
                 </ul>
               </div>
@@ -364,7 +508,7 @@ export default function PlanDisplay({
         </div>
       )}
 
-      {/* Adaptive Plan Notification */}
+      {/* Level-up nudge */}
       {progressPercentage >= 80 && (
         <div className="p-4 rounded-xl bg-gradient-to-r from-[var(--color-primary)]/20 to-blue-500/20 border border-[var(--color-primary)] flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -391,7 +535,7 @@ export default function PlanDisplay({
         </div>
       )}
 
-      {/* Global Actions */}
+      {/* Action buttons */}
       <div className="grid grid-cols-2 sm:flex flex-wrap gap-3 justify-center">
         <button
           onClick={() => speakPlan("all")}
@@ -412,25 +556,26 @@ export default function PlanDisplay({
           }}
           className="px-3 md:px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center justify-center gap-2 text-sm"
         >
-          <CalendarPlus size={16} />{" "}
+          <CalendarPlus size={16} />
           <span className="hidden sm:inline">Add to Cal</span>
         </button>
-        {/* 🟢 NEW GOOGLE CALENDAR BUTTON */}
+
         <button
           onClick={() => {
             const url = generateGoogleCalendarUrl(plan);
             if (url) window.open(url, "_blank");
             setToast({
               show: true,
-              message: "📅 Opening Google Calendar...",
+              message: "📅 Opening Google Calendar…",
               type: "success",
             });
           }}
           className="px-3 md:px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition flex items-center justify-center gap-2 text-sm"
         >
-          <CalendarPlus size={16} />{" "}
+          <CalendarPlus size={16} />
           <span className="hidden sm:inline">Add to GCal</span>
         </button>
+
         <button
           onClick={() =>
             generateAndDownloadPDF(plan, userData, shoppingList, setToast)
@@ -494,7 +639,7 @@ export default function PlanDisplay({
           ))}
       </div>
 
-      {/* Content Area */}
+      {/* Tab content */}
       <div className="min-h-[400px]">
         <AnimatePresence mode="wait">
           {activeTab === "workout" && (
@@ -516,7 +661,7 @@ export default function PlanDisplay({
         </AnimatePresence>
       </div>
 
-      {/* Modals */}
+      {/* Image modal */}
       {imageModalData && (
         <ImageModal
           data={imageModalData}
@@ -524,6 +669,43 @@ export default function PlanDisplay({
           onClose={() => setImageModalData(null)}
         />
       )}
+
+      {/* ── Feedback modal ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {showFeedbackModal && savedPlanId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="glass-card w-full max-w-sm p-6 rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-card)] relative shadow-2xl"
+            >
+              {/* Close */}
+              <button
+                onClick={() => setShowFeedbackModal(false)}
+                className="absolute top-4 right-4 p-1.5 hover:bg-[var(--color-text)]/10 rounded-full transition"
+              >
+                <X size={18} className="text-[var(--color-text-secondary)]" />
+              </button>
+
+              <div className="mb-5">
+                <h3 className="text-lg font-black text-[var(--color-text)]">
+                  Rate your plan ⭐
+                </h3>
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                  Your rating helps our AI generate better plans for people like
+                  you.
+                </p>
+              </div>
+
+              <FeedbackWidget
+                planId={savedPlanId}
+                onDone={() => setShowFeedbackModal(false)}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Footer */}
       <div className="text-center mt-8 md:mt-12 pt-6 md:pt-8 border-t border-[var(--color-border)] text-[10px] md:text-xs text-[var(--color-text-secondary)] px-4">
@@ -536,12 +718,12 @@ export default function PlanDisplay({
 
       <button
         onClick={reset}
-        className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors text-xs md:text-sm w-full text-center mt-4 flex items-center justify-center gap-2 group pb-4"
+        className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors text-xs md:text-sm w-full text-center mt-4 flex items-center justify-center gap-2 pb-4"
       >
-        <span>← Start Over</span>
+        ← Start Over
       </button>
 
-      {/* Toast - Fixed position near scrollbar */}
+      {/* Toast */}
       {toast?.show && (
         <div className="fixed top-4 right-4 sm:right-6 md:right-8 lg:right-12 z-50 w-[calc(100%-2rem)] sm:w-96 max-w-md">
           <Toast
