@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 // Validate environment variables
 function getSupabaseClient() {
@@ -11,7 +12,7 @@ function getSupabaseClient() {
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      "Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
+      "Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
     );
   }
 
@@ -48,7 +49,7 @@ export async function GET() {
           error: "Failed to fetch recent progress",
           details: recentError.message,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -64,7 +65,7 @@ export async function GET() {
       console.error("Streak data error:", streakError);
       return NextResponse.json(
         { error: "Failed to fetch streak data", details: streakError.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -141,7 +142,7 @@ export async function GET() {
         details: error.message,
         hint: "Check environment variables and database connection",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -173,7 +174,7 @@ export async function POST(req: Request) {
           mood: mood || null,
           workout_completed: workout_completed || false,
         },
-        { onConflict: "user_id, date" }
+        { onConflict: "user_id, date" },
       )
       .select();
 
@@ -181,7 +182,7 @@ export async function POST(req: Request) {
       console.error("Supabase upsert error:", error);
       return NextResponse.json(
         { error: "Failed to save progress", details: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -194,7 +195,7 @@ export async function POST(req: Request) {
         details: error.message,
         hint: "Check environment variables and database connection",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { auth } from "@clerk/nextjs/server";
-
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 // Validate environment variables
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -9,7 +10,7 @@ function getSupabaseClient() {
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      "Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
+      "Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
     );
   }
 
@@ -42,7 +43,7 @@ export async function GET() {
       console.error("Supabase error:", error);
       return NextResponse.json(
         { error: "Database query failed", details: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -55,7 +56,7 @@ export async function GET() {
         details: error.message,
         hint: "Check environment variables and database connection",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (!userData || !plan) {
       return NextResponse.json(
         { error: "Missing plan or userData" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
       console.error("Supabase insert error:", error);
       return NextResponse.json(
         { error: "Failed to save to database", details: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
         details: error.message,
         hint: "Check environment variables and database connection",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -155,7 +156,7 @@ export async function DELETE(request: NextRequest) {
       console.error("Supabase delete error:", error);
       return NextResponse.json(
         { error: "Failed to delete plan", details: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -168,7 +169,7 @@ export async function DELETE(request: NextRequest) {
         details: error.message,
         hint: "Check environment variables and database connection",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
