@@ -1,79 +1,100 @@
-# 💪 AI Fitness Coach App
+# 💪 FitnessAI — AI-Powered Personal Trainer
 
-An AI-powered fitness assistant built with **Next.js 15** that generates **personalized workout and diet plans** using multiple LLM providers with automatic fallback.
+> A full-stack, production-ready AI fitness coach that generates personalized workout & diet plans, tracks your progress, and coaches your posture in real-time — all for free.
 
-## 🚀 Features
+<div align="center">
 
-### ✅ Implemented Features
+![Next.js](https://img.shields.io/badge/Next.js_16-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)
+![Clerk](https://img.shields.io/badge/Clerk-6C47FF?logo=clerk&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?logo=pwa)
 
-- **📝 Comprehensive User Profile**
+</div>
 
-  - Name, Age, Gender
-  - Height & Weight (with automatic BMI calculation)
-  - Fitness Goals (Weight Loss, Muscle Gain, Endurance, Flexibility)
-  - Fitness Level (Beginner, Intermediate, Advanced)
-  - Workout Location (Home, Gym, Outdoor)
-  - Dietary Preferences (Veg, Non-Veg, Vegan, Keto, Paleo)
-  - Medical History & Injuries (optional)
-  - Stress Level tracking
+---
 
-- **🧠 AI-Powered Plan Generation**
+## ✨ Features
 
-  - Multi-provider support with automatic fallback:
-    - Google Gemini (Primary)
-    - Groq (Fast, 14,400 requests/day)
-    - HuggingFace (Open source models)
-  - Personalized workout routines with sets, reps, and rest times
-  - Detailed diet plans with macros and portions
-  - AI-generated motivation quotes
-  - Lifestyle and recovery tips
+### 🧠 AI Plan Generation
 
-- **🔊 Voice Features**
+- **Multi-provider fallback:** Groq (Llama 3.3 70B) → Gemini 2.5 Flash → Gemini Pro → HuggingFace
+- **RAG-enhanced plans:** Finds top-rated plans from similar users and uses them as AI context
+- Personalized workout (3–5 days), diet (6 meals), macros, hydration, recovery, and supplements
+- Safety warnings and health-aware modifications for injuries/conditions/allergies
 
-  - Text-to-Speech using Web Speech API (built-in, no API needed)
-  - Read workout plan
-  - Read diet plan
-  - Read complete plan
+### 🏋️ AI Posture Coach (Real-Time)
 
-- **🖼️ AI Image Generation**
+- TensorFlow.js MoveNet pose detection in the browser — no backend needed
+- Hardcoded biomechanics profiles for 7 common exercises (instant)
+- AI-generated profiles for any other exercise via Groq/Gemini/HuggingFace
+- Rep counter, joint angle overlay, live coaching cues, voice feedback
 
-  - Click any exercise or meal to generate visual representation
-  - Multiple providers:
-    - Pollinations.ai (100% FREE, no API key needed)
-    - Replicate (Stable Diffusion XL)
-    - HuggingFace Inference API
-  - Realistic gym exercise images
-  - Professional food photography
+### 🖼️ AI Image Generation
 
-- **📄 Export & Save Features**
+- Click any exercise or meal to generate a photo
+- Provider chain: Groq Flux → Pollinations.ai (free) → Gemini Imagen → Replicate → HuggingFace
+- Images cached in Supabase Storage — no repeated API calls
 
-  - Export plan as text file (PDF-ready)
-  - Save plans to localStorage
-  - View saved plans history
-  - Regenerate plan with same parameters
+### 📊 Progress Tracker
 
-- **🎨 UI/UX Features**
-  - 🌗 Dark/Light mode toggle
-  - Smooth animations with Framer Motion
-  - Glassmorphism design
-  - Responsive layout (mobile, tablet, desktop)
-  - Loading states and error handling
+- Daily check-in: weight, mood, workout completed
+- Current & longest streak calculation
+- Weekly consistency bar chart + 14-day weight trend line chart
+- Shareable progress card (PNG download + WhatsApp share)
+
+### 📱 PWA (Progressive Web App)
+
+- Installable on Android, iOS, and desktop
+- Offline support for static pages via service worker
+- Native app feel with full-screen mode
+
+### 🔊 Voice Features
+
+- Web Speech API TTS — reads your full workout or diet plan aloud
+- Real-time voice coaching during posture detection
+
+### 📄 Export & Share
+
+- Download plan as a detailed multi-page PDF (jsPDF + autotable)
+- Export workout schedule as `.ics` (iCal) or add directly to Google Calendar
+- Share progress card to WhatsApp
+
+### 🌗 UI/UX
+
+- Dark / Light mode (persisted)
+- Glassmorphism design with Framer Motion animations
+- Fully responsive — mobile, tablet, desktop
+- Clerk authentication (Google, GitHub, email)
+
+### 🤖 RAG System
+
+- Stores every generated plan in Supabase with user metadata
+- Users rate plans (1–5 stars) after saving
+- Postgres RPC (`get_similar_plans`) finds dimensionally similar high-rated plans
+- Injects top matches as structured few-shot examples into the AI prompt
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Category       | Technologies                                  |
-| -------------- | --------------------------------------------- |
-| **Frontend**   | Next.js 15 (App Router), React 18, TypeScript |
-| **Styling**    | Tailwind CSS, Glassmorphism                   |
-| **Animations** | Framer Motion                                 |
-| **AI APIs**    | Google Gemini, Groq, HuggingFace              |
-| **Image Gen**  | Pollinations.ai, Replicate, HuggingFace       |
-| **Voice**      | Web Speech API (built-in)                     |
-| **Icons**      | Lucide React                                  |
-| **Storage**    | localStorage                                  |
-| **Deployment** | Vercel / Netlify                              |
+| Layer              | Technology                                                        |
+| ------------------ | ----------------------------------------------------------------- |
+| **Framework**      | Next.js 16 (App Router), React 19, TypeScript                     |
+| **Styling**        | Tailwind CSS v4, Framer Motion, Glassmorphism                     |
+| **AI (Text)**      | Google Gemini, Groq (Llama), HuggingFace                          |
+| **AI (Images)**    | Groq Flux, Pollinations.ai, Gemini Imagen, Replicate, HuggingFace |
+| **Pose Detection** | TensorFlow.js, MoveNet (runs entirely in browser)                 |
+| **Auth**           | Clerk (Google, GitHub, email/password)                            |
+| **Database**       | Supabase (PostgreSQL)                                             |
+| **Storage**        | Supabase Storage (cached AI images)                               |
+| **Email**          | Resend                                                            |
+| **PDF Export**     | jsPDF + jspdf-autotable                                           |
+| **Charts**         | Recharts                                                          |
+| **Icons**          | Lucide React                                                      |
+| **PWA**            | Custom Service Worker + Web App Manifest                          |
+| **Deployment**     | Vercel                                                            |
 
 ---
 
@@ -81,309 +102,371 @@ An AI-powered fitness assistant built with **Next.js 15** that generates **perso
 
 ### Prerequisites
 
-- Node.js 18+ and npm/yarn/pnpm
-- At least ONE of these FREE API keys:
-  - [Google Gemini API Key](https://makersuite.google.com/app/apikey) (Recommended)
-  - [Groq API Key](https://console.groq.com/keys)
-  - [HuggingFace API Key](https://huggingface.co/settings/tokens)
+- **Node.js 18+**
+- **At least ONE AI API key** (Groq recommended — fastest, free)
+- **Supabase project** (free tier works)
+- **Clerk account** (free tier works)
 
-### Step 1: Clone the Repository
+### 1. Clone
 
 ```bash
 git clone <your-repo-url>
-cd fitness-ai-app
+cd fitness-ai
 ```
 
-### Step 2: Install Dependencies
+### 2. Install Dependencies
 
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
-### Step 3: Environment Variables
+### 3. Environment Variables
 
-Create a `.env.local` file in the root directory:
+Create `.env.local` in the root:
 
 ```env
-# AI Plan Generation (At least ONE required)
-GEMINI_API_KEY=your_gemini_api_key_here
-GROQ_API_KEY=your_groq_api_key_here
-HUGGINGFACE_API_KEY=your_huggingface_api_key_here
+# ─── AI Plan Generation (at least ONE required) ───────────────
+GROQ_API_KEY=your_groq_api_key
+GEMINI_API_KEY=your_gemini_api_key
+HUGGINGFACE_API_KEY=your_huggingface_api_key
 
-# Image Generation (Optional - Pollinations.ai works without API key)
-REPLICATE_API_KEY=your_replicate_api_key_here
+# ─── Image Generation (optional — Pollinations is free) ───────
+REPLICATE_API_KEY=your_replicate_api_key
+
+# ─── Supabase ─────────────────────────────────────────────────
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# ─── Clerk ────────────────────────────────────────────────────
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+
+# ─── Email (optional) ─────────────────────────────────────────
+RESEND_API_KEY=your_resend_api_key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-**Getting API Keys:**
+### 4. Getting API Keys
 
-1. **Gemini (Recommended - FREE):**
+| Service       | URL                                      | Free Tier          |
+| ------------- | ---------------------------------------- | ------------------ |
+| Groq          | https://console.groq.com/keys            | 14,400 req/day     |
+| Google Gemini | https://makersuite.google.com/app/apikey | 60 req/min         |
+| HuggingFace   | https://huggingface.co/settings/tokens   | 1,000 req/month    |
+| Replicate     | https://replicate.com/account/api-tokens | Pay-per-use        |
+| Supabase      | https://app.supabase.com                 | Free tier          |
+| Clerk         | https://dashboard.clerk.com              | Free tier          |
+| Resend        | https://resend.com                       | 3,000 emails/month |
 
-   - Visit: https://makersuite.google.com/app/apikey
-   - Sign in with Google
-   - Click "Get API Key"
+### 5. Supabase Database Setup
 
-2. **Groq (Ultra-fast - FREE):**
+Run these SQL migrations in your Supabase SQL editor:
 
-   - Visit: https://console.groq.com
-   - Sign up and go to API Keys
-   - Create new API key
+```sql
+-- Users table
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  email TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-3. **HuggingFace (Open Source - FREE):**
-   - Visit: https://huggingface.co/settings/tokens
-   - Create account and generate token
+-- Fitness plans
+CREATE TABLE fitness_plans (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  user_data JSONB,
+  plan_data JSONB,
+  bmi FLOAT,
+  provider TEXT,
+  rating INT CHECK (rating >= 1 AND rating <= 5),
+  feedback_note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-### Step 4: Run Development Server
+-- Daily progress
+CREATE TABLE daily_progress (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  date DATE NOT NULL,
+  weight FLOAT,
+  mood TEXT,
+  workout_completed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
+);
+
+-- Image cache
+CREATE TABLE image_cache (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  prompt TEXT UNIQUE NOT NULL,
+  image_url TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Supabase Storage bucket for images
+-- Go to Storage → New Bucket → Name: "exercise-images" → Public: true
+```
+
+```sql
+-- RAG: get_similar_plans RPC function
+CREATE OR REPLACE FUNCTION get_similar_plans(
+  p_goal TEXT,
+  p_diet_type TEXT,
+  p_age_range TEXT,
+  p_bmi_range TEXT,
+  p_level TEXT,
+  p_activity_level TEXT,
+  p_equipment_type TEXT,
+  p_gender TEXT,
+  p_has_injuries BOOLEAN,
+  p_has_conditions BOOLEAN,
+  p_limit INT DEFAULT 3
+)
+RETURNS TABLE (
+  plan_data JSONB,
+  user_data JSONB,
+  rating INT,
+  feedback_note TEXT,
+  match_tier INT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
+  WITH scored AS (
+    SELECT
+      fp.plan_data,
+      fp.user_data,
+      fp.rating,
+      fp.feedback_note,
+      CASE
+        WHEN fp.user_data->>'goal' = p_goal
+          AND fp.user_data->>'diet' = p_diet_type
+          AND fp.user_data->>'level' = p_level
+          AND fp.user_data->>'gender' = p_gender
+        THEN 1
+        WHEN fp.user_data->>'goal' = p_goal
+          AND fp.user_data->>'diet' = p_diet_type
+          AND fp.user_data->>'level' = p_level
+        THEN 2
+        WHEN fp.user_data->>'goal' = p_goal
+          AND fp.user_data->>'diet' = p_diet_type
+        THEN 3
+        WHEN fp.user_data->>'goal' = p_goal
+          AND fp.user_data->>'level' = p_level
+        THEN 4
+        ELSE 5
+      END AS match_tier
+    FROM fitness_plans fp
+    WHERE fp.rating >= 4
+      AND fp.plan_data IS NOT NULL
+      AND fp.user_data->>'goal' = p_goal
+  )
+  SELECT s.plan_data, s.user_data, s.rating, s.feedback_note, s.match_tier
+  FROM scored s
+  ORDER BY s.match_tier ASC, s.rating DESC
+  LIMIT p_limit;
+END;
+$$;
+```
+
+### 6. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 📱 PWA Installation
+
+After deploying:
+
+- **Android:** Open in Chrome → tap ⋮ → "Add to Home Screen"
+- **iOS:** Open in Safari → Share → "Add to Home Screen"
+- **Desktop:** Click the install icon in the Chrome address bar
+
+The app will load as a standalone app with the green `#00e599` theme color.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-fitness-ai-app/
+fitness-ai/
 ├── app/
+│   ├── (auth)/
+│   │   ├── sign-in/[[...sign-in]]/page.tsx
+│   │   └── sign-up/[[...sign-up]]/page.tsx
 │   ├── api/
-│   │   ├── generate/
-│   │   │   └── route.ts          # AI plan generation endpoint
-│   │   └── generate-image/
-│   │       └── route.ts          # Image generation endpoint
-│   ├── globals.css               # Global styles with dark/light mode
-│   ├── layout.tsx                # Root layout
-│   └── page.tsx                  # Main page with state management
+│   │   ├── generate/route.ts          # AI plan generation + RAG
+│   │   ├── generate-image/route.ts    # AI image generation + caching
+│   │   ├── plans/
+│   │   │   ├── route.ts               # CRUD for saved plans
+│   │   │   ├── feedback/route.ts      # Star ratings
+│   │   │   └── ping/route.ts          # DB keep-alive
+│   │   ├── pose-profile/route.ts      # AI exercise pose profiles
+│   │   ├── progress/route.ts          # Daily check-ins + streaks
+│   │   └── send-email/route.ts        # Resend email notifications
+│   ├── dashboard/page.tsx             # User dashboard
+│   ├── globals.css
+│   ├── layout.tsx                     # Root layout + PWA + Clerk
+│   └── page.tsx                       # Landing page + plan generator
 ├── components/
-│   ├── FitnessForm.tsx          # User input form
-│   └── PlanDisplay.tsx          # Plan visualization & features
-├── public/                       # Static assets
-├── .env.local                   # Environment variables (create this)
-├── package.json
-├── tailwind.config.ts
-└── tsconfig.json
+│   ├── PlanDisplay/
+│   │   ├── index.tsx                  # Main plan display + tabs
+│   │   ├── WorkoutView.tsx            # Workout tab
+│   │   ├── DietView.tsx               # Diet + macro chart tab
+│   │   ├── HealthView.tsx             # Health & recovery tab
+│   │   ├── ShoppingView.tsx           # Interactive grocery list
+│   │   └── ImageModal.tsx             # AI image modal
+│   ├── FitnessForm.tsx                # User input form
+│   ├── FeedbackWidget.tsx             # Star rating widget
+│   ├── PoseDetectionModal.tsx         # Real-time posture coach
+│   ├── ProgressTracker.tsx            # Dashboard progress section
+│   ├── ThemeProvider.tsx
+│   └── Toast.tsx
+├── public/
+│   ├── manifest.json                  # PWA manifest
+│   ├── sw.js                          # Service worker
+│   ├── icon-192x192.png
+│   └── icon-512x512.png
+├── utils/
+│   ├── calendarExport.ts              # .ics generation
+│   ├── googleCalendar.ts              # Google Calendar URL builder
+│   ├── pdfExports.ts                  # jsPDF plan export
+│   ├── ragContext.ts                  # RAG context builder
+│   └── mediapipe-stub.js
+├── lib/supabase.ts
+├── middleware.ts                      # Clerk route protection
+├── next.config.ts
+└── .env.local
 ```
 
 ---
 
-## 🎯 Usage Guide
+## 🚀 Deployment (Vercel)
 
-### 1. Fill in Your Details
+1. Push to GitHub
+2. Import repo at [vercel.com](https://vercel.com)
+3. Add all environment variables from `.env.local`
+4. Deploy
 
-- Enter your name, age, gender, height, and weight
-- Select your fitness goal (Weight Loss, Muscle Gain, etc.)
-- Choose your fitness level
-- Specify dietary preferences
-- Add medical history if needed (optional)
-
-### 2. Generate Your Plan
-
-- Click "Generate My Plan"
-- AI will create a personalized workout and diet plan
-- View your BMI calculation
-- Get motivation quotes and tips
-
-### 3. Use Voice Features
-
-- Click speaker icon on workout/diet sections
-- Click "Read My Plan" to hear everything
-- Click again to stop
-
-### 4. View Exercise/Meal Images
-
-- Hover over exercises in workout plan
-- Click image icon to generate visual
-- Click meals in diet plan for food photos
-
-### 5. Save & Export
-
-- Click "Save Plan" to store in localStorage
-- Click "Export PDF" to download as text file
-- Click "Regenerate" for a new plan with same details
-- Click "Start Over" to create a new profile
-
-### 6. Toggle Dark/Light Mode
-
-- Click sun/moon icon in top-right corner
-- Preference is saved in localStorage
+The GitHub Action in `.github/workflows/ping.yml` pings your Supabase every 10 minutes to prevent cold starts on the free tier.
 
 ---
 
-## 🔧 Configuration
+## 🐛 Known Issues & Fixes
 
-### Adding New AI Providers
+### ⚠️ `next-pwa` conflict
 
-Edit `app/api/generate/route.ts`:
+The `next-pwa` package is listed in `package.json` but the current implementation uses a **custom service worker** (`public/sw.js`) registered manually in `layout.tsx`. You should either:
 
-```typescript
-const PROVIDERS = [
-  { provider: "gemini", model: "gemini-2.5-flash", name: "Gemini" },
-  // Add your provider here
-];
+- **Remove `next-pwa`** from `package.json` (recommended — the custom SW is already set up)
+- Or switch fully to `next-pwa` and remove the manual registration
+
+```bash
+npm uninstall next-pwa
 ```
 
-### Customizing Prompts
+### ⚠️ `html2canvas` vs `dom-to-image-more`
 
-Modify the prompt in `app/api/generate/route.ts` to adjust:
+Both are imported in `ProgressTracker.tsx` — `html2canvas` is installed but unused (only `dom-to-image-more` is actually called). Remove the unused import.
 
-- Workout day count
-- Exercise count per day
-- Meal structure
-- Output format
+```bash
+# optionally remove html2canvas if not needed elsewhere
+npm uninstall html2canvas
+```
 
-### Image Generation Settings
+### ⚠️ `next.config.ts` — mediapipe alias only in turbopack
 
-Edit `app/api/generate-image/route.ts`:
+The `resolveAlias` for `@mediapipe/pose` is inside `turbopack:` config but the dev script uses `--webpack`. Move it to the webpack config block or switch dev to turbopack:
 
-- Change image dimensions
-- Adjust prompt enhancement
-- Add new image providers
+```bash
+# Either change package.json scripts.dev to:
+"dev": "next dev --turbopack"
+# Or add a webpack alias in next.config.ts
+```
 
----
+### ⚠️ Supabase warm-up GitHub Action URL typo
 
-## 🚀 Deployment
+In `.github/workflows/ping.yml`, the URL is `http://` (not `https://`). Fix:
 
-### Deploy to Vercel (Recommended)
+```yaml
+- name: Make requests
+  run: |
+    curl -s https://your-app.vercel.app/api/plans/ping || true
+```
 
-1. Push your code to GitHub
-2. Visit [vercel.com](https://vercel.com)
-3. Import your repository
-4. Add environment variables in project settings
-5. Deploy!
+### ⚠️ `middleware.ts` — `/api/pose-profile` not in public routes
 
-### Deploy to Netlify
+The posture profile route requires auth but it's called from the client inside `PoseDetectionModal`. Add it to public routes if you want unauthenticated users to use posture detection:
 
-1. Push code to GitHub
-2. Visit [netlify.com](https://netlify.com)
-3. New site from Git
-4. Add environment variables
-5. Deploy!
+```ts
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/api/generate(.*)",
+  "/api/generate-image(.*)",
+  "/api/pose-profile", // ← add this
+]);
+```
 
----
+### ⚠️ Toast positioning conflict
 
-## 🐛 Troubleshooting
+`Toast.tsx` uses `fixed top-6 right-6 z-100` but `PlanDisplay/index.tsx` wraps it in another fixed div with different positioning. Remove the wrapper div in `PlanDisplay/index.tsx` — just render `<Toast>` directly.
 
-### "All providers failed" Error
+### ⚠️ Shopping list uses `localStorage`
 
-- Ensure at least ONE API key is set in `.env.local`
-- Check API key validity
-- Verify API quotas haven't been exceeded
-
-### Images Not Generating
-
-- Pollinations.ai works without API key (always free)
-- For better quality, add Replicate or HuggingFace API keys
-- Check browser console for errors
-
-### Voice Not Working
-
-- Web Speech API requires HTTPS in production
-- Some browsers may not support it (use Chrome/Edge)
-
-### Dark Mode Not Persisting
-
-- Check localStorage is enabled in browser
-- Clear cache and reload
+`ShoppingView.tsx` uses `localStorage` for checkbox state. This works fine in the browser but will cause SSR errors if rendered server-side. It's currently a client component (`"use client"`), so it's safe — just be aware.
 
 ---
 
 ## 📊 API Rate Limits (Free Tiers)
 
-| Provider        | Free Tier Limit      |
-| --------------- | -------------------- |
-| Google Gemini   | 60 requests/minute   |
-| Groq            | 14,400 requests/day  |
-| HuggingFace     | 1,000 requests/month |
-| Pollinations.ai | Unlimited (FREE)     |
-
----
-
-## 🎥 Demo Video Checklist
-
-Create a video showing:
-
-1. ✅ Landing page and UI overview
-2. ✅ Filling out user form with all fields
-3. ✅ AI plan generation (show loading state)
-4. ✅ Generated workout plan with details
-5. ✅ Generated diet plan with macros
-6. ✅ Voice reading feature (all sections)
-7. ✅ Image generation for exercises
-8. ✅ Image generation for meals
-9. ✅ Export as PDF
-10. ✅ Save plan feature
-11. ✅ Regenerate plan feature
-12. ✅ Dark/Light mode toggle
-13. ✅ Mobile responsive view
-14. ✅ Error handling (show what happens without API key)
-
----
-
-## 📝 Submission Checklist
-
-- [ ] Live app link (Vercel/Netlify)
-- [ ] GitHub repository link (public)
-- [ ] Video demo (5-10 minutes)
-- [ ] README with setup instructions
-- [ ] Environment variables documented
-- [ ] All features working:
-  - [ ] AI plan generation
-  - [ ] Voice reading
-  - [ ] Image generation
-  - [ ] PDF export
-  - [ ] Save plans
-  - [ ] Dark/Light mode
-  - [ ] Responsive design
+| Provider        | Limit                 |
+| --------------- | --------------------- |
+| Groq            | 14,400 requests/day   |
+| Google Gemini   | 60 requests/minute    |
+| HuggingFace     | 1,000 requests/month  |
+| Pollinations.ai | Unlimited             |
+| Supabase        | 500MB DB, 1GB Storage |
+| Clerk           | 10,000 MAU            |
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feat/my-feature`
 3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+4. Push and open a Pull Request
 
 ---
 
 ## 📄 License
 
-This project is open source and available under the MIT License.
+MIT — free to use, modify, and distribute.
 
 ---
 
-## 🙏 Acknowledgments
+## 🙏 Credits
 
-- Google Gemini API
-- Groq API
-- HuggingFace
-- Pollinations.ai (for free image generation)
-- Lucide Icons
-- Framer Motion
-
----
-
-## 📧 Support
-
-For issues or questions:
-
-- Open a GitHub issue
-- Check existing documentation
-- Review API provider documentation
+- [Groq](https://groq.com) — ultra-fast LLM inference
+- [Google Gemini](https://deepmind.google/technologies/gemini/) — multimodal AI
+- [Pollinations.ai](https://pollinations.ai) — free image generation
+- [TensorFlow.js](https://www.tensorflow.org/js) — in-browser ML
+- [Supabase](https://supabase.com) — open source Firebase alternative
+- [Clerk](https://clerk.com) — authentication
+- [Framer Motion](https://www.framer.com/motion/) — animations
+- [Recharts](https://recharts.org) — charts
+- [Lucide](https://lucide.dev) — icons
 
 ---
-
-Time Estimate: 24-30 hours
-Status: ✅ Complete & Production Ready
