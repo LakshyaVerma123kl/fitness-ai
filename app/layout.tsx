@@ -7,12 +7,6 @@ import { ThemeProvider } from "../components/ThemeProvider";
 export const metadata: Metadata = {
   title: "FitnessAI - Your AI Personal Trainer",
   description: "AI-powered personalized fitness and diet plans",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "FitnessAI",
-  },
   icons: {
     apple: "/icon-192x192.png",
     icon: [
@@ -37,20 +31,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* PWA Meta Tags */}
-        <meta name="application-name" content="FitnessAI" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta
-          name="apple-mobile-web-app-status-bar-style"
-          content="black-translucent"
-        />
-        <meta name="apple-mobile-web-app-title" content="FitnessAI" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileColor" content="#00e599" />
-        <meta name="msapplication-tap-highlight" content="no" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
-      </head>
       <body className="antialiased bg-(--color-dark) text-(--color-text)">
         <ThemeProvider
           attribute="class"
@@ -87,25 +67,6 @@ export default function RootLayout({
             {children}
           </ClerkProvider>
         </ThemeProvider>
-
-        {/* Service Worker Registration */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                      console.log('SW registered: ', registration);
-                    })
-                    .catch(function(registrationError) {
-                      console.log('SW registration failed: ', registrationError);
-                    });
-                });
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   );
