@@ -69,16 +69,22 @@ export default function ProgressTracker({
   const [showShareModal, setShowShareModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const { isLoaded: isUserLoaded } = useUser(); // useUser is already imported
+
   useEffect(() => {
-    // Initialize today's entry with correct client date
     setTodayEntry({
       date: new Date().toISOString().split("T")[0],
       weight: null,
       mood: "",
       workout_completed: false,
     });
-    fetchProgress();
   }, []);
+
+  useEffect(() => {
+    if (isUserLoaded) {
+      fetchProgress();
+    }
+  }, [isUserLoaded]);
 
   const fetchProgress = async () => {
     try {
