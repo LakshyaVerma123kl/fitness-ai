@@ -1,20 +1,38 @@
-import { createBrowserClient } from "@supabase/ssr";
+import {
+  createBrowserClient,
+  createServerClient as supabaseServerClient,
+} from "@supabase/ssr";
+import { cookies } from "next/headers"; // <-- Import cookies
 
 export function createClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 }
 
 // For server-side usage
-export function createServerClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export async function createServerClient() {
+  const cookieStore = await cookies();
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  return createBrowserClient(supabaseUrl, supabaseKey);
+  return supabaseServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // Ignore errors when setting cookies from Server Components
+          }
+        },
+      },
+    },
+  );
 }

@@ -13,19 +13,19 @@ const isPublicRoute = createRouteMatcher([
 const isApiRoute = createRouteMatcher(["/api/(.*)"]);
 
 export default clerkMiddleware(async (auth, request) => {
-  if (isPublicRoute(request)) return; // allow public routes through immediately
+  // If it's a public route, do nothing and let it pass
+  if (isPublicRoute(request)) return;
 
-  const { userId } = await auth();
+  const authObject = await auth();
 
-  if (!userId) {
-    // For API routes, return 401 JSON
+  if (!authObject.userId) {
+    // If unauthorized and it's an API route, return 401 JSON manually
     if (isApiRoute(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    // For page routes like /dashboard, redirect to sign-in
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("redirect_url", request.url);
-    return NextResponse.redirect(signInUrl);
+
+    // For all other protected UI routes, let Clerk securely handle the redirect
+    return authObject.redirectToSignIn();
   }
 });
 
