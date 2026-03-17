@@ -7,6 +7,13 @@ const nextConfig = {
       "@mediapipe/pose": "./utils/mediapipe-stub.js",
     },
   },
+  webpack: (config: any) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@mediapipe/pose": path.resolve(__dirname, "utils/mediapipe-stub.js"),
+    };
+    return config;
+  },
   images: {
     remotePatterns: [
       {

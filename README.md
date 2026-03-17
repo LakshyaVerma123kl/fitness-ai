@@ -27,6 +27,8 @@
 ### 🏋️ AI Posture Coach (Real-Time)
 
 - TensorFlow.js MoveNet pose detection in the browser — no backend needed
+- **Modularized custom `usePoseDetection` React Hook** managing the entire TensorFlow lifecycle
+- Pure decoupled math physics logic in `utils/poseAnalysis.ts`
 - Hardcoded biomechanics profiles for 7 common exercises (instant)
 - AI-generated profiles for any other exercise via Groq/Gemini/HuggingFace
 - Rep counter, joint angle overlay, live coaching cues, voice feedback
@@ -37,10 +39,12 @@
 - Provider chain: Groq Flux → Pollinations.ai (free) → Gemini Imagen → Replicate → HuggingFace
 - Images cached in Supabase Storage — no repeated API calls
 
-### 📊 Progress Tracker
+### 📊 Progress Tracker, Macros & Gamification
 
 - Daily check-in: weight, mood, workout completed
+- **Daily Macro Logger:** Track and log your daily calories, protein, carbs, and fats
 - Current & longest streak calculation
+- **Gamification & Badges:** Earn dynamic badges for workout consistency, streaks, and logging meals
 - Weekly consistency bar chart + 14-day weight trend line chart
 - Shareable progress card (PNG download + WhatsApp share)
 
@@ -208,6 +212,19 @@ CREATE TABLE image_cache (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Daily Macros (New Features)
+CREATE TABLE daily_macros (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  date DATE NOT NULL,
+  calories INT DEFAULT 0,
+  protein INT DEFAULT 0,
+  carbs INT DEFAULT 0,
+  fats INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
+);
+
 -- Supabase Storage bucket for images
 -- Go to Storage → New Bucket → Name: "exercise-images" → Public: true
 ```
@@ -313,7 +330,9 @@ fitness-ai/
 │   │   │   └── ping/route.ts          # DB keep-alive
 │   │   ├── pose-profile/route.ts      # AI exercise pose profiles
 │   │   ├── progress/route.ts          # Daily check-ins + streaks
-│   │   └── send-email/route.ts        # Resend email notifications
+│   │   ├── send-email/route.ts        # Resend email notifications
+│   │   ├── badges/route.ts            # User gamification badges
+│   │   └── macros/route.ts            # Daily nutritional logger
 │   ├── dashboard/page.tsx             # User dashboard
 │   ├── globals.css
 │   ├── layout.tsx                     # Root layout + PWA + Clerk
@@ -329,7 +348,10 @@ fitness-ai/
 │   ├── FitnessForm.tsx                # User input form
 │   ├── FeedbackWidget.tsx             # Star rating widget
 │   ├── PoseDetectionModal.tsx         # Real-time posture coach
+│   ├── PoseDetectionUI.tsx            # Isolated UI elements for coaching overlay
 │   ├── ProgressTracker.tsx            # Dashboard progress section
+│   ├── DailyMacroLogger.tsx           # Track and enter daily nutrition macros
+│   ├── BadgeDisplay.tsx               # Renders earned gamification badges
 │   ├── ThemeProvider.tsx
 │   └── Toast.tsx
 ├── public/
@@ -342,6 +364,8 @@ fitness-ai/
 │   ├── googleCalendar.ts              # Google Calendar URL builder
 │   ├── pdfExports.ts                  # jsPDF plan export
 │   ├── ragContext.ts                  # RAG context builder
+│   ├── poseAnalysis.ts                # Physics calculations for joint angles
+│   ├── usePoseDetection.ts            # Custom React hook for TensorFlow model
 │   └── mediapipe-stub.js
 ├── lib/supabase.ts
 ├── middleware.ts                      # Clerk route protection

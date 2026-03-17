@@ -57,6 +57,7 @@ export default function ProgressTracker({
     currentStreak: 0,
     longestStreak: 0,
   });
+  const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
 
   // ⚡️ Hydration Fix: Start as null, set in useEffect
   const [todayEntry, setTodayEntry] = useState<ProgressEntry | null>(null);
@@ -100,6 +101,13 @@ export default function ProgressTracker({
         if (existingToday) {
           setTodayEntry(existingToday);
         }
+      }
+
+      // Fetch badges
+      const badgeRes = await fetch("/api/badges");
+      if (badgeRes.ok) {
+         const badgeData = await badgeRes.json();
+         setEarnedBadges(badgeData.earnedBadges || []);
       }
     } catch (error) {
       console.error("Failed to fetch progress", error);
@@ -204,10 +212,10 @@ export default function ProgressTracker({
   };
 
   const badges = [
-    { days: 3, icon: Medal, label: "3 Day Streak", color: "text-orange-400" },
-    { days: 7, icon: Trophy, label: "7 Day Streak", color: "text-gray-300" },
-    { days: 14, icon: Award, label: "14 Day Streak", color: "text-yellow-400" },
-    { days: 30, icon: Star, label: "Legend", color: "text-purple-400" },
+    { id: "streak_3", days: 3, icon: Medal, label: "3 Day Streak", color: "text-orange-400" },
+    { id: "streak_7", days: 7, icon: Trophy, label: "7 Day Streak", color: "text-gray-300" },
+    { id: "streak_14", days: 14, icon: Award, label: "14 Day Streak", color: "text-yellow-400" },
+    { id: "streak_30", days: 30, icon: Star, label: "Legend", color: "text-purple-400" },
   ];
 
   // ⚡️ Loading State for Hydration Fix
@@ -274,7 +282,7 @@ export default function ProgressTracker({
           </div>
           <div className="flex justify-between items-center">
             {badges.map((badge) => {
-              const isUnlocked = stats.longestStreak >= badge.days;
+              const isUnlocked = earnedBadges.includes(badge.id);
               return (
                 <div
                   key={badge.days}
@@ -391,7 +399,7 @@ export default function ProgressTracker({
             Consistency
           </h3>
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
                 <XAxis dataKey="day" tick={{ fill: "#9ca3af", fontSize: 12 }} />
@@ -419,7 +427,7 @@ export default function ProgressTracker({
             <TrendingUp size={18} className="text-blue-400" /> Weight Trend
           </h3>
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <LineChart data={entries.slice(-14)}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
                 <XAxis

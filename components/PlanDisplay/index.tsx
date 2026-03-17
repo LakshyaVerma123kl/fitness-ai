@@ -725,14 +725,12 @@ export default function PlanDisplay({
 
       {/* Toast */}
       {toast?.show && (
-        <div className="fixed top-4 right-4 sm:right-6 md:right-8 lg:right-12 z-50 w-[calc(100%-2rem)] sm:w-96 max-w-md">
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-            duration={4000}
-          />
-        </div>
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+          duration={4000}
+        />
       )}
     </div>
   );

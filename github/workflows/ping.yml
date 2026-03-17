@@ -10,5 +10,5 @@ jobs:
     steps:
       - name: Make requests
         run: |
-          curl -s https://fitness-ai-beryl-theta.vercel.app/api/plan/ping || true
+          curl -s https://fitness-ai-beryl-theta.vercel.app/api/plans/ping || true
           curl -s https://fitness-ai-beryl-theta.vercel.app/api/progress || true

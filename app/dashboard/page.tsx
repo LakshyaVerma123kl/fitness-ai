@@ -25,6 +25,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PlanDisplay from "@/components/PlanDisplay";
 import ProgressTracker from "@/components/ProgressTracker";
+import DailyMacroLogger from "@/components/DailyMacroLogger";
 
 import Toast from "@/components/Toast";
 // Paste this BEFORE `export default function Dashboard()`
@@ -456,9 +457,10 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Progress Tracker */}
-        <div className="mb-12">
+        {/* Progress Tracker & Macro Logger */}
+        <div className="mb-12 space-y-8">
           <ProgressTracker userId={user?.id || ""} userGoal={latestGoal} />
+          <DailyMacroLogger />
         </div>
 
         {/* Plans header */}
