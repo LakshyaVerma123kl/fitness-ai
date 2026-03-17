@@ -1,6 +1,6 @@
 "use client";
-import { useMemo } from "react";
-import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   PieChart,
   Pie,
@@ -17,6 +17,7 @@ import {
   Image as ImageIcon,
   AlertCircle,
   Target,
+  RefreshCw,
 } from "lucide-react";
 
 const COLORS = ["#3b82f6", "#10b981", "#eab308"];
@@ -46,6 +47,39 @@ export default function DietView({
   onGenerateImage: (prompt: string, type: string) => void;
 }) {
   const mealsSource = plan.diet?.meals || plan.diet;
+
+  // Meal swap state: key = mealType, value = swapped meal object
+  const [swappedMeals, setSwappedMeals] = useState<Record<string, any>>({});
+  const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
+
+  const handleSwap = async (mealType: string, details: any) => {
+    setSwappingMeal(mealType);
+    try {
+      const res = await fetch("/api/swap-meal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          meal: details.meal,
+          macros: {
+            protein: details.protein,
+            carbs: details.carbs,
+            fats: details.fats,
+            calories: details.calories,
+          },
+          dietType: plan.diet_type || "",
+          allergies: plan.allergies || "",
+        }),
+      });
+      const data = await res.json();
+      if (data.swapped) {
+        setSwappedMeals((prev) => ({ ...prev, [mealType]: data.swapped }));
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSwappingMeal(null);
+    }
+  };
 
   const macroData = useMemo(() => {
     if (!plan.diet) return [];
@@ -252,7 +286,7 @@ export default function DietView({
         {mealsSource &&
           MEAL_ORDER.map((mealType) => {
             if (!mealsSource[mealType]) return null;
-            const details = mealsSource[mealType];
+            const details = swappedMeals[mealType] || mealsSource[mealType];
 
             // Determine meal color
             const mealColors: { [key: string]: string } = {
@@ -281,8 +315,13 @@ export default function DietView({
                     <h4 className="text-[var(--color-text-secondary)] text-[10px] md:text-xs font-bold tracking-wider mb-1 uppercase">
                       {MEAL_LABELS[mealType] || mealType}
                     </h4>
-                    <h3 className="text-base md:text-lg font-bold text-[var(--color-text)] mb-2 wrap-break-words">
+                    <h3 className="text-base md:text-lg font-bold text-[var(--color-text)] mb-2 wrap-break-words flex items-center gap-2 flex-wrap">
                       {details.meal}
+                      {swappedMeals[mealType] && (
+                        <span className="text-[10px] text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full font-normal">
+                          ✦ Swapped
+                        </span>
+                      )}
                     </h3>
 
                     {/* Allergy Warning */}
@@ -334,6 +373,15 @@ export default function DietView({
                     <ChefHat size={16} className="md:w-[18px] md:h-[18px]" />
                     <span className="hidden xs:inline">Recipe</span>
                   </a>
+                  <button
+                    onClick={() => handleSwap(mealType, mealsSource[mealType])}
+                    disabled={swappingMeal === mealType}
+                    className="p-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-lg flex items-center justify-center gap-1.5 hover:bg-purple-500/20 transition-all flex-1 text-xs md:text-sm disabled:opacity-50"
+                    title="Swap this meal for an AI alternative"
+                  >
+                    <RefreshCw size={16} className={swappingMeal === mealType ? "animate-spin" : ""} />
+                    <span className="hidden xs:inline">{swappingMeal === mealType ? "Swapping…" : "Swap"}</span>
+                  </button>
                   <button
                     onClick={() =>
                       onGenerateImage(

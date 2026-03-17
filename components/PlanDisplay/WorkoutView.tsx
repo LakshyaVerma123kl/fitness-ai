@@ -8,13 +8,12 @@ import {
   Flame,
   AlertCircle,
   Scan,
+  Timer,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
-// Lazy load the heavy TF modal — only fetched when user clicks the button
-const PoseDetectionModal = dynamic(() => import("../PoseDetectionModal"), {
-  ssr: false,
-});
+const PoseDetectionModal = dynamic(() => import("../PoseDetectionModal"), { ssr: false });
+const WorkoutTimer = dynamic(() => import("../WorkoutTimer"), { ssr: false });
 
 export default function WorkoutView({
   plan,
@@ -30,9 +29,8 @@ export default function WorkoutView({
   const hasWorkout = plan.workout && Array.isArray(plan.workout);
 
   // Only one pose modal open at a time
-  const [activePostureExercise, setActivePostureExercise] = useState<
-    string | null
-  >(null);
+  const [activePostureExercise, setActivePostureExercise] = useState<string | null>(null);
+  const [activeTimer, setActiveTimer] = useState<{ name: string; sets: number; reps: string; rest: string } | null>(null);
 
   return (
     <>
@@ -149,8 +147,8 @@ export default function WorkoutView({
                         </div>
                       </div>
 
-                      {/* Action Buttons — now 4 including Posture Check */}
-                      <div className="grid grid-cols-3 gap-2 pl-9 sm:pl-11">
+                      {/* Action Buttons — 4 cols */}
+                      <div className="grid grid-cols-4 gap-2 pl-9 sm:pl-11">
                         {/* YouTube Tutorial */}
                         <a
                           href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
@@ -176,6 +174,23 @@ export default function WorkoutView({
                         >
                           <ImageIcon size={16} />
                           <span className="hidden xs:inline">Demo</span>
+                        </button>
+
+                        {/* ⏱️ Timer Button */}
+                        <button
+                          onClick={() =>
+                            setActiveTimer({
+                              name: ex.name,
+                              sets: parseInt(ex.sets) || 3,
+                              reps: ex.reps,
+                              rest: ex.rest,
+                            })
+                          }
+                          className="p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg text-orange-400 flex items-center justify-center gap-1.5 hover:bg-orange-500/20 transition-all text-xs md:text-sm font-medium"
+                          title="Start workout timer"
+                        >
+                          <Timer size={16} />
+                          <span className="hidden xs:inline">Timer</span>
                         </button>
 
                         {/* ✨ Posture Check Button */}
@@ -206,6 +221,15 @@ export default function WorkoutView({
         <PoseDetectionModal
           exerciseName={activePostureExercise}
           onClose={() => setActivePostureExercise(null)}
+        />
+      )}
+      {activeTimer && (
+        <WorkoutTimer
+          exerciseName={activeTimer.name}
+          sets={activeTimer.sets}
+          reps={activeTimer.reps}
+          rest={activeTimer.rest}
+          onClose={() => setActiveTimer(null)}
         />
       )}
     </>

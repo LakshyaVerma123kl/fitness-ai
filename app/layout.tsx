@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import "./globals.css";
 import { ThemeProvider } from "../components/ThemeProvider";
+import GlobalChatWidget from "../components/GlobalChatWidget";
 
 export const metadata: Metadata = {
   title: "FitnessAI - Your AI Personal Trainer",
@@ -65,6 +66,7 @@ export default function RootLayout({
             }}
           >
             {children}
+            <GlobalChatWidget />
           </ClerkProvider>
         </ThemeProvider>
       </body>
