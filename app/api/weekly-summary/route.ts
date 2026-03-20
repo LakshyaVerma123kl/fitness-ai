@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateWithFallback } from "@/utils/llm";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -63,13 +63,7 @@ Write a SHORT, punchy 3-sentence weekly summary. Be specific with their numbers.
 
 Keep it under 80 words. Sound human, not robotic. Use 1-2 emojis naturally.`;
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY not found");
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const summaryText = result.response.text();
+    const { text: summaryText } = await generateWithFallback(prompt);
 
     return NextResponse.json({
       summary: summaryText,

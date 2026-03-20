@@ -18,6 +18,7 @@ import {
   Brain,
   Sparkles,
   Info,
+  SwitchCamera,
 } from "lucide-react";
 
 import { ScoreRing, PoseScoreArea, PoseIssuesArea, PosePraisesArea, PoseJointsArea } from "./PoseDetectionUI";
@@ -257,7 +258,9 @@ export default function PoseDetectionModal({ exerciseName, onClose }: Props) {
     fps,
     profile,
     pipeline,
-    resetReps
+    resetReps,
+    toggleCamera,
+    facingMode
   } = usePoseDetection(videoRef, canvasRef, resolveProfile, exerciseName, voiceOn);
 
   const isRepBased = profile?.isRepBased ?? true;
@@ -327,6 +330,13 @@ export default function PoseDetectionModal({ exerciseName, onClose }: Props) {
                     className={`p-2 rounded-lg transition ${voiceOn ? "bg-[#00e599]/10 text-[#00e599]" : "bg-white/5 text-gray-500"}`}
                   >
                     {voiceOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                  </button>
+                  <button
+                    onClick={toggleCamera}
+                    className="p-2 hover:bg-white/8 rounded-lg transition text-gray-400 hover:text-white md:hidden"
+                    title="Switch Camera"
+                  >
+                    <SwitchCamera size={15} />
                   </button>
                   <button
                     onClick={() => setMirrored((m) => !m)}

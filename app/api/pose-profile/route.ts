@@ -1,5 +1,6 @@
 // app/api/pose-profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { generateWithFallback } from "@/utils/llm";
 
 const MOVENET_KPS = [
   "nose",
@@ -144,106 +145,20 @@ export async function POST(req: NextRequest) {
 
   const prompt = buildPrompt(exercise.trim());
 
-  // ── Try Groq ──────────────────────────────────────────────
-  const groqKey = process.env.GROQ_API_KEY;
-  if (groqKey) {
-    try {
-      const res = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${groqKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.1,
-            max_tokens: 1500,
-          }),
-        },
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content ?? "";
-        const profile = parseProfile(text);
-        if (profile)
-          return NextResponse.json({ profile, provider: "Groq Llama 3.3" });
-      }
-    } catch (e) {
-      console.error("[pose-profile] Groq error:", e);
+  try {
+    const { text, providerName } = await generateWithFallback(prompt);
+    const profile = parseProfile(text);
+    
+    if (profile) {
+      return NextResponse.json({ profile, provider: providerName });
+    } else {
+      throw new Error("Invalid output format");
     }
+  } catch (error: any) {
+    console.error(`[pose-profile] Error:`, error);
+    return NextResponse.json(
+      { error: "All AI providers failed" },
+      { status: 503 },
+    );
   }
-
-  // ── Try Gemini 2.5 Flash ──────────────────────────────────
-  const geminiKey =
-    process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (geminiKey) {
-    for (const model of ["gemini-2.5-flash", "gemini-pro"]) {
-      try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.1, maxOutputTokens: 1500 },
-            }),
-          },
-        );
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-          const profile = parseProfile(text);
-          if (profile)
-            return NextResponse.json({
-              profile,
-              provider: `Gemini ${model === "gemini-2.5-flash" ? "2.5 Flash" : "Pro"}`,
-            });
-        }
-      } catch (e) {
-        console.error(`[pose-profile] Gemini ${model} error:`, e);
-      }
-    }
-  }
-
-  // ── Try HuggingFace ───────────────────────────────────────
-  const hfKey = process.env.HUGGINGFACE_API_KEY ?? process.env.HF_TOKEN;
-  if (hfKey) {
-    try {
-      const res = await fetch(
-        "https://api-inference.huggingface.co/models/meta-llama/Llama-3.3-70B-Instruct/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${hfKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "meta-llama/Llama-3.3-70B-Instruct",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.1,
-            max_tokens: 1500,
-          }),
-        },
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content ?? "";
-        const profile = parseProfile(text);
-        if (profile)
-          return NextResponse.json({ profile, provider: "HF Llama 3.3" });
-      }
-    } catch (e) {
-      console.error("[pose-profile] HuggingFace error:", e);
-    }
-  }
-
-  // ── All providers failed ──────────────────────────────────
-  return NextResponse.json(
-    { error: "All AI providers failed" },
-    { status: 503 },
-  );
 }

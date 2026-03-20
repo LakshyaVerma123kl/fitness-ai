@@ -138,10 +138,16 @@ function drawFrame(
   ctx.globalAlpha = 1;
 }
 
-const POSE_MODELS = [
-  { label: "MoveNet Thunder (HD)", type: "SINGLEPOSE_THUNDER" },
-  { label: "MoveNet Lightning (Fast)", type: "SINGLEPOSE_LIGHTNING" },
-];
+const getPoseModels = () => {
+  const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone/i.test(navigator.userAgent);
+  return isMobile ? [
+    { label: "MoveNet Lightning (Fast)", type: "SINGLEPOSE_LIGHTNING" },
+    { label: "MoveNet Thunder (HD)", type: "SINGLEPOSE_THUNDER" },
+  ] : [
+    { label: "MoveNet Thunder (HD)", type: "SINGLEPOSE_THUNDER" },
+    { label: "MoveNet Lightning (Fast)", type: "SINGLEPOSE_LIGHTNING" },
+  ];
+};
 
 export function usePoseDetection(
     videoRef: React.RefObject<HTMLVideoElement | null>,
@@ -165,6 +171,7 @@ export function usePoseDetection(
   const [modelLabel, setModelLabel] = useState("");
   const [provider, setProvider] = useState("");
   const [fps, setFps] = useState(0);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   
   const fpsRef = useRef(0);
   const fpsTime = useRef(Date.now());
@@ -267,7 +274,8 @@ export function usePoseDetection(
     setStage("loading-model");
     const pd = await import("@tensorflow-models/pose-detection");
     let det: any = null;
-    for (const cfg of POSE_MODELS) {
+    const models = getPoseModels();
+    for (const cfg of models) {
       try {
         setMsg(`Loading ${cfg.label}…`);
         det = await pd.createDetector(pd.SupportedModels.MoveNet, {
@@ -296,7 +304,7 @@ export function usePoseDetection(
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: "user",
+          facingMode: facingMode,
           frameRate: { ideal: 30 },
         },
         audio: false,
@@ -318,7 +326,45 @@ export function usePoseDetection(
 
     setStage("ready");
     loop();
-  }, [exerciseName, resolveProfile, loop, videoRef]);
+  }, [exerciseName, resolveProfile, loop, videoRef, facingMode]);
+
+  const toggleCamera = useCallback(async () => {
+    const newMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(newMode);
+    
+    // Stop old tracks
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+    }
+    
+    setStage("loading-camera");
+    setMsg("Flipping camera…");
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: newMode,
+          frameRate: { ideal: 30 },
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setStage("ready");
+    } catch (e: any) {
+      setErrMsg(
+        e.name === "NotAllowedError"
+          ? "Camera access denied. Please allow camera."
+          : e.message,
+      );
+      setStage("error");
+    }
+  }, [facingMode, videoRef]);
 
   const resetReps = () => {
     repRef.current = { count: 0, phase: "up", lastAngle: 180 };
@@ -346,6 +392,8 @@ export function usePoseDetection(
     fps,
     profile: profRef.current,
     pipeline,
-    resetReps
+    resetReps,
+    toggleCamera,
+    facingMode
   };
 }

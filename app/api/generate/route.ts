@@ -1,101 +1,7 @@
 // app/api/generate/route.ts
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { buildRagContext } from "@/utils/ragContext";
-
-// ==========================================
-// ⚙️ CONFIGURATION
-// ==========================================
-
-const PROVIDERS = [
-  {
-    provider: "groq",
-    model: "llama-3.3-70b-versatile",
-    name: "Groq Llama 3.3 70B",
-  },
-  { provider: "gemini", model: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-  { provider: "gemini", model: "gemini-pro", name: "Gemini Pro" },
-  {
-    provider: "huggingface",
-    model: "meta-llama/Llama-3.3-70B-Instruct",
-    name: "HuggingFace Llama 3.3",
-  },
-];
-
-// ==========================================
-// 🔌 API HELPERS
-// ==========================================
-
-async function callGroq(prompt: string, model: string) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error("GROQ_API_KEY not found");
-
-  const response = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert fitness coach and nutritionist with medical knowledge. Prioritize safety and health. Return ONLY valid JSON. Do not include markdown formatting.",
-          },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(
-      `Groq Error: ${error.error?.message || response.statusText}`,
-    );
-  }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
-}
-
-async function callHuggingFace(prompt: string, model: string) {
-  const apiKey = process.env.HUGGINGFACE_API_KEY;
-  if (!apiKey) throw new Error("HUGGINGFACE_API_KEY not found");
-
-  const response = await fetch(
-    `https://api-inference.huggingface.co/models/${model}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 4000,
-          temperature: 0.7,
-          return_full_text: false,
-        },
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`HuggingFace Error: ${error}`);
-  }
-
-  const data = await response.json();
-  return data[0]?.generated_text || data.generated_text;
-}
+import { generateWithFallback } from "@/utils/llm";
 
 // ==========================================
 // 🚀 MAIN ROUTE HANDLER
@@ -363,87 +269,60 @@ Generate a comprehensive, safe, and personalized plan now.`;
     // =========================================
     // 🔄 Provider Fallback Loop
     // =========================================
-    let lastError = null;
+    try {
+      const systemPrompt = "You are an expert fitness coach and nutritionist with medical knowledge. Prioritize safety and health. Return ONLY valid JSON. Do not include markdown formatting.";
+      const { text: responseText, providerName } = await generateWithFallback(prompt, systemPrompt);
 
-    for (let i = 0; i < PROVIDERS.length; i++) {
-      const { provider, model, name: providerName } = PROVIDERS[i];
+      // Clean & parse
+      let cleanedText = responseText.trim();
+      cleanedText = cleanedText
+        .replace(/```json\s*/gi, "")
+        .replace(/```\s*/g, "")
+        .replace(/`/g, "");
 
-      try {
-        let responseText = "";
+      const firstBrace = cleanedText.indexOf("{");
+      const lastBrace = cleanedText.lastIndexOf("}");
 
-        if (provider === "gemini") {
-          const apiKey = process.env.GEMINI_API_KEY;
-          if (!apiKey) continue;
-          const genAI = new GoogleGenerativeAI(apiKey);
-          const geminiModel = genAI.getGenerativeModel({ model });
-          const result = await geminiModel.generateContent(prompt);
-          const response = await result.response;
-          responseText = response.text();
-        } else if (provider === "groq") {
-          if (!process.env.GROQ_API_KEY) continue;
-          responseText = await callGroq(prompt, model);
-        } else if (provider === "huggingface") {
-          if (!process.env.HUGGINGFACE_API_KEY) continue;
-          responseText = await callHuggingFace(prompt, model);
-        }
+      if (firstBrace === -1 || lastBrace === -1)
+        throw new Error("No valid JSON found in AI response");
 
-        // Clean & parse
-        let cleanedText = responseText.trim();
-        cleanedText = cleanedText
-          .replace(/```json\s*/gi, "")
-          .replace(/```\s*/g, "")
-          .replace(/`/g, "");
+      cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
+      const parsedData = JSON.parse(cleanedText);
 
-        const firstBrace = cleanedText.indexOf("{");
-        const lastBrace = cleanedText.lastIndexOf("}");
-
-        if (firstBrace === -1 || lastBrace === -1)
-          throw new Error("No valid JSON found in AI response");
-
-        cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
-        const parsedData = JSON.parse(cleanedText);
-
-        if (!parsedData.workout || !Array.isArray(parsedData.workout))
-          throw new Error("Invalid workout structure");
-        if (!parsedData.diet || !parsedData.diet.meals)
-          throw new Error("Invalid diet structure");
-        if (!parsedData.safety_warnings) {
-          parsedData.safety_warnings = [
-            "Consult with a healthcare provider before starting any new fitness program.",
-          ];
-        }
-
-        // ✅ Success — attach metadata including RAG info
-        return NextResponse.json({
-          ...parsedData,
-          _metadata: {
-            provider: providerName,
-            bmi,
-            bmr,
-            tdee,
-            generatedAt: new Date().toISOString(),
-            hasHealthConditions: healthContext.length > 0,
-            healthFactorsConsidered: healthContext.length,
-            // NEW: track whether RAG examples were used
-            ragEnhanced: ragContext.length > 0,
-          },
-        });
-      } catch (error: any) {
-        lastError = error;
-        console.warn(`⚠️ ${providerName} failed: ${error.message}`);
-        if (i < PROVIDERS.length - 1)
-          await new Promise((r) => setTimeout(r, 1000));
+      if (!parsedData.workout || !Array.isArray(parsedData.workout))
+        throw new Error("Invalid workout structure");
+      if (!parsedData.diet || !parsedData.diet.meals)
+        throw new Error("Invalid diet structure");
+      if (!parsedData.safety_warnings) {
+        parsedData.safety_warnings = [
+          "Consult with a healthcare provider before starting any new fitness program.",
+        ];
       }
-    }
 
-    console.error("❌ All AI providers failed");
-    return NextResponse.json(
-      {
-        error: "Unable to generate plan. Please try again later.",
-        details: lastError?.message,
-      },
-      { status: 500 },
-    );
+      // ✅ Success — attach metadata including RAG info
+      return NextResponse.json({
+        ...parsedData,
+        _metadata: {
+          provider: providerName,
+          bmi,
+          bmr,
+          tdee,
+          generatedAt: new Date().toISOString(),
+          hasHealthConditions: healthContext.length > 0,
+          healthFactorsConsidered: healthContext.length,
+          ragEnhanced: ragContext.length > 0,
+        },
+      });
+    } catch (error: any) {
+      console.error("❌ Generation failed:", error);
+      return NextResponse.json(
+        {
+          error: "Unable to generate plan. Please try again later.",
+          details: error.message,
+        },
+        { status: 500 },
+      );
+    }
   } catch (error: any) {
     console.error("❌ Critical Server Error:", error);
     return NextResponse.json(
