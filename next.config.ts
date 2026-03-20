@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 import path from "path";
+import withPwaInit from "@ducanh2912/next-pwa";
 
-const nextConfig = {
+const withPwa = withPwaInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+});
+
+const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
       "@mediapipe/pose": "./utils/mediapipe-stub.js",
@@ -28,4 +35,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig as NextConfig;
+export default withPwa(nextConfig);
