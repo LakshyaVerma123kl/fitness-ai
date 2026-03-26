@@ -25,10 +25,10 @@ const LEVELS = [
 
 const DIETS = [
   { id: "Standard", label: "No Restriction", emoji: "🍽️" },
+  { id: "Desi", label: "Indian (Desi)", emoji: "🍛" },
   { id: "Vegetarian", label: "Vegetarian", emoji: "🥗" },
   { id: "Vegan", label: "Vegan", emoji: "🌱" },
   { id: "Keto", label: "Keto", emoji: "🥩" },
-  { id: "Paleo", label: "Paleo", emoji: "🦴" },
   { id: "Mediterranean", label: "Mediterranean", emoji: "🫒" },
 ];
 

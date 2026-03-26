@@ -46,9 +46,26 @@ export default function AIChatCoach({ planContext }: AIChatCoachProps) {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [showQuickPrompts, setShowQuickPrompts] = useState(true);
+  const [isVisible, setIsVisible] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY.current + 10) {
+        setIsVisible(false);
+      } else if (currentScrollY < lastScrollY.current - 10) {
+        setIsVisible(true);
+      }
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -151,11 +168,12 @@ export default function AIChatCoach({ planContext }: AIChatCoachProps) {
     <>
       {/* Floating Button */}
       <AnimatePresence>
-        {!open && (
+        {!open && isVisible && (
           <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
+            initial={{ scale: 0, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0, opacity: 0, y: 50 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setOpen(true)}

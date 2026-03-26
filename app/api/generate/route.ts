@@ -108,7 +108,7 @@ USER PROFILE:
 - BMR: ${bmr} kcal/day | TDEE: ${tdee} kcal/day
 - Goal: ${goal}
 - Experience: ${level}
-- Diet Preference: ${diet}
+- Diet Preference: ${diet} ${diet === "Desi" || diet.includes("Indian") ? "\n🚨 CRITICAL DIET RULE: User selected Desi/Indian diet. YOU MUST use standard Indian household measures like 'katori' (bowl), 'pieces' (for roti/chapati). Suggest easily accessible Indian home-cooked meals (dal, sabzi, paneer, roti, rice)." : ""}
 - Equipment Access: ${equipment}
 - Activity Level: ${activityLevel}
 - Sleep: ${sleepHours} hours/night
