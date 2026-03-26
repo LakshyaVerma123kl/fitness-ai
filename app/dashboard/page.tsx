@@ -152,11 +152,34 @@ export default function Dashboard() {
   }, [selectedPlan, mounted]);
 
   const fetchPlansAndCheckProgress = async () => {
+    // 🔥 Eagerly load from offline cache for "Gym-Proof" instant UI
+    const cached = localStorage.getItem("fitnessai_offline_plans");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPlans(parsed);
+          setLatestGoal(parsed[0].user_data?.goal);
+          
+          const urlPlan = new URLSearchParams(window.location.search).get("plan");
+          if (urlPlan) {
+            const found = parsed.find((p: any) => p.id === urlPlan);
+            if (found) setSelectedPlan(found);
+          }
+          setLoading(false); // Instantly stop loading indicator
+        }
+      } catch (e) { console.error("Cache read error", e); }
+    }
+
     try {
       const plansRes = await fetch("/api/plans");
       const plansData = await plansRes.json();
       if (Array.isArray(plansData)) {
+        // Update state with fresh DB data
         setPlans(plansData);
+        // Persist fresh data for next offline session
+        localStorage.setItem("fitnessai_offline_plans", JSON.stringify(plansData));
+
         if (plansData.length > 0) {
           const newestPlan = plansData[0];
           setLatestGoal(newestPlan.user_data?.goal);
@@ -170,7 +193,9 @@ export default function Dashboard() {
         }
       }
     } catch (err) {
-      console.error("Failed to load data", err);
+      console.error("No internet or server error, falling back to offline cache.", err);
+      // We don't clear the cache here so offline keeps working!
+      if (!cached) setToast({ show: true, message: "⚠️ No internet and no offline cache found.", type: "error" });
     } finally {
       setLoading(false);
     }
