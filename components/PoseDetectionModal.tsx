@@ -356,9 +356,9 @@ export default function PoseDetectionModal({ exerciseName, onClose }: Props) {
           </div>
 
           {/* Body */}
-          <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+          <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
             {/* Camera */}
-            <div className="relative lg:w-[60%] bg-black aspect-video lg:aspect-auto flex items-center justify-center overflow-hidden shrink-0">
+            <div className="relative md:w-[55%] lg:w-[60%] bg-black aspect-[4/5] sm:aspect-video md:aspect-auto flex items-center justify-center overflow-hidden shrink-0">
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
@@ -455,10 +455,10 @@ export default function PoseDetectionModal({ exerciseName, onClose }: Props) {
             </div>
 
             {/* Feedback panel */}
-            <div className="lg:w-[40%] flex flex-col overflow-y-auto">
-              <div className="p-4 sm:p-5 space-y-4 flex-1">
+            <div className="md:w-[45%] lg:w-[40%] flex flex-col overflow-y-auto border-t md:border-t-0 md:border-l border-white/10">
+              <div className="p-3 sm:p-5 space-y-3 sm:space-y-4 flex-1">
                 {profile?.description && stage === "ready" && (
-                  <div className="bg-white/3 border border-white/8 rounded-xl px-3 py-2.5 flex items-start gap-2">
+                  <div className="bg-white/3 border border-white/8 rounded-xl px-3 py-2.5 hidden sm:flex items-start gap-2">
                     <Activity
                       size={11}
                       className="text-gray-500 mt-0.5 shrink-0"
@@ -476,7 +476,7 @@ export default function PoseDetectionModal({ exerciseName, onClose }: Props) {
                       Stand in frame to begin analysis
                     </p>
                     {profile && (
-                      <div className="text-xs text-left w-full bg-white/4 border border-white/8 rounded-xl p-4 space-y-1.5">
+                      <div className="text-xs text-left w-full bg-white/4 border border-white/8 rounded-xl p-3 sm:p-4 space-y-1.5 hidden sm:block">
                         <p className="text-gray-400 font-semibold mb-1">
                           Tracking {profile.angles.length} joint angles:
                         </p>
