@@ -125,8 +125,31 @@ export default function Dashboard() {
     show: boolean; message: string; type: "success" | "error" | "warning";
   } | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { 
+    setMounted(true); 
+    const urlTab = new URLSearchParams(window.location.search).get("tab") as DashTab;
+    if (urlTab) setActiveTab(urlTab);
+  }, []);
+  
   useEffect(() => { if (isLoaded && user) fetchPlansAndCheckProgress(); }, [isLoaded, user]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", activeTab);
+    window.history.replaceState({}, "", url.toString());
+  }, [activeTab, mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const url = new URL(window.location.href);
+    if (selectedPlan) {
+      url.searchParams.set("plan", selectedPlan.id);
+    } else {
+      url.searchParams.delete("plan");
+    }
+    window.history.replaceState({}, "", url.toString());
+  }, [selectedPlan, mounted]);
 
   const fetchPlansAndCheckProgress = async () => {
     try {
@@ -138,6 +161,12 @@ export default function Dashboard() {
           const newestPlan = plansData[0];
           setLatestGoal(newestPlan.user_data?.goal);
           await checkAutoProgression(newestPlan);
+          
+          const urlPlan = new URLSearchParams(window.location.search).get("plan");
+          if (urlPlan) {
+            const found = plansData.find((p: any) => p.id === urlPlan);
+            if (found) setSelectedPlan(found);
+          }
         }
       }
     } catch (err) {
