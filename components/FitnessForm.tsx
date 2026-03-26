@@ -228,7 +228,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
                 <option>Gym</option>
                 <option>Home</option>
                 <option>Outdoor</option>
-                <option>Minimal Equipment</option>
+                <option>Light Home Workouts (No Body Strain)</option>
               </select>
             </div>
           </div>

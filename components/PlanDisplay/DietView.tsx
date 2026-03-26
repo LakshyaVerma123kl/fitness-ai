@@ -51,6 +51,30 @@ export default function DietView({
   // Meal swap state: key = mealType, value = swapped meal object
   const [swappedMeals, setSwappedMeals] = useState<Record<string, any>>({});
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
+  
+  // Desify state
+  const [, setTick] = useState(0);
+  const [desifying, setDesifying] = useState(false);
+
+  const handleDesify = async () => {
+    setDesifying(true);
+    try {
+      const res = await fetch("/api/desify-diet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dietPlan: plan.diet }),
+      });
+      const data = await res.json();
+      if (data.diet) {
+        plan.diet = data.diet; // Mutate parent reference so PDF/Shopping List update instantly
+        setTick(t => t + 1); // Force re-render
+      }
+    } catch {
+      console.error("Failed to desify diet");
+    } finally {
+      setDesifying(false);
+    }
+  };
 
   const handleSwap = async (mealType: string, details: any) => {
     setSwappingMeal(mealType);
@@ -114,6 +138,26 @@ export default function DietView({
       exit={{ opacity: 0, y: -20 }}
       className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8"
     >
+      {/* 🇮🇳 Desify Banner */}
+      <div className="lg:col-span-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-orange-500/10 border border-orange-500/30 p-4 md:p-5 rounded-2xl">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">🇮🇳</span>
+          <div>
+            <h4 className="font-bold text-orange-400">Make it Desi</h4>
+            <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-0.5 max-w-lg">
+              Convert this exact diet plan into authentic Indian cuisine—maintaining your same macro targets.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleDesify}
+          disabled={desifying}
+          className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-bold rounded-xl text-sm hover:opacity-90 shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {desifying ? <RefreshCw size={16} className="animate-spin" /> : "Desify Now"}
+        </button>
+      </div>
+
       {/* Calorie Target & Explanation */}
       {plan.diet?.calorie_target && (
         <div className="lg:col-span-3 p-5 rounded-2xl bg-gradient-to-br from-green-900/10 to-blue-900/10 border border-[var(--color-border)]">

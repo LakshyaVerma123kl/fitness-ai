@@ -19,6 +19,7 @@ import ActivityHeatmap from "@/components/ActivityHeatmap";
 import PersonalRecords from "@/components/PersonalRecords";
 import TodaysWorkout from "@/components/TodaysWorkout";
 import Toast from "@/components/Toast";
+import CycleSyncWidget from "@/components/CycleSyncWidget";
 
 // ── Dashboard Tab types ────────────────────────────────────
 type DashTab = "overview" | "workout-log" | "measurements" | "records" | "plans";
@@ -321,6 +322,11 @@ export default function Dashboard() {
 
               {/* Weekly AI Summary + Quote */}
               <WeeklySummary userGoal={latestGoal} />
+
+              {/* Cycle Syncing (Privacy-first, only visible if Female) */}
+              {plans.length > 0 && plans[0]?.user_data?.gender === "Female" && (
+                <CycleSyncWidget />
+              )}
 
               {/* Activity Heatmap */}
               <ActivityHeatmap />

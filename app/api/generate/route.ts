@@ -109,7 +109,7 @@ USER PROFILE:
 - Goal: ${goal}
 - Experience: ${level}
 - Diet Preference: ${diet} ${diet === "Desi" || diet.includes("Indian") ? "\n🚨 CRITICAL DIET RULE: User selected Desi/Indian diet. YOU MUST use standard Indian household measures like 'katori' (bowl), 'pieces' (for roti/chapati). Suggest easily accessible Indian home-cooked meals (dal, sabzi, paneer, roti, rice)." : ""}
-- Equipment Access: ${equipment}
+- Equipment Access: ${equipment} ${equipment.includes("Light Home Workouts") ? "\n🚨 CRITICAL WORKOUT RULE: User requested Light Home Workouts. YOU MUST exclusively recommend extremely gentle, low-impact, joint-friendly exercises that require zero equipment and cause no severe strain. No heavy jumping." : ""}
 - Activity Level: ${activityLevel}
 - Sleep: ${sleepHours} hours/night
 - Water Intake: ${waterIntake}L/day
