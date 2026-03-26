@@ -315,7 +315,7 @@ export default function DietView({
                     <h4 className="text-[var(--color-text-secondary)] text-[10px] md:text-xs font-bold tracking-wider mb-1 uppercase">
                       {MEAL_LABELS[mealType] || mealType}
                     </h4>
-                    <h3 className="text-base md:text-lg font-bold text-[var(--color-text)] mb-2 wrap-break-words flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base md:text-lg font-bold text-[var(--color-text)] mb-2 break-words flex items-center gap-2 flex-wrap">
                       {details.meal}
                       {swappedMeals[mealType] && (
                         <span className="text-[10px] text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full font-normal">
@@ -371,7 +371,7 @@ export default function DietView({
                     className="p-2 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors flex-1 flex justify-center items-center gap-1.5 text-xs md:text-sm"
                   >
                     <ChefHat size={16} className="md:w-[18px] md:h-[18px]" />
-                    <span className="hidden xs:inline">Recipe</span>
+                    <span className="hidden sm:inline">Recipe</span>
                   </a>
                   <button
                     onClick={() => handleSwap(mealType, mealsSource[mealType])}
@@ -380,7 +380,7 @@ export default function DietView({
                     title="Swap this meal for an AI alternative"
                   >
                     <RefreshCw size={16} className={swappingMeal === mealType ? "animate-spin" : ""} />
-                    <span className="hidden xs:inline">{swappingMeal === mealType ? "Swapping…" : "Swap"}</span>
+                    <span className="hidden sm:inline">{swappingMeal === mealType ? "Swapping…" : "Swap"}</span>
                   </button>
                   <button
                     onClick={() =>
@@ -392,7 +392,7 @@ export default function DietView({
                     className="p-2 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg text-blue-400 flex items-center justify-center gap-1.5 opacity-100 transition-all hover:bg-black/5 dark:hover:bg-white/10 flex-1 text-xs md:text-sm"
                   >
                     <ImageIcon size={16} className="md:w-[18px] md:h-[18px]" />
-                    <span className="hidden xs:inline">View</span>
+                    <span className="hidden sm:inline">View</span>
                   </button>
                 </div>
               </div>

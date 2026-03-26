@@ -116,13 +116,13 @@ export default function DailyMacroLogger() {
           <label className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider font-bold mb-3 block">
             What did you eat today?
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               value={foodText}
               onChange={(e) => setFoodText(e.target.value)}
               placeholder="e.g., 2 roti with 1 katori dal and some rice..."
-              className="flex-1 bg-[var(--color-dark)] text-sm text-[var(--color-text)] border border-[var(--color-border)] rounded-xl px-4 py-3 focus:outline-none focus:border-[var(--color-primary)] placeholder-gray-600"
+              className="flex-1 bg-[var(--color-dark)] text-base text-[var(--color-text)] border border-[var(--color-border)] rounded-xl px-4 py-3 focus:outline-none focus:border-[var(--color-primary)] placeholder-[var(--color-text-secondary)]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') analyzeFood();
               }}
@@ -130,7 +130,7 @@ export default function DailyMacroLogger() {
             <button
                onClick={analyzeFood}
                disabled={analyzingFood || !foodText.trim()}
-               className="bg-[var(--color-primary)] text-black px-4 py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 min-w-[100px] disabled:opacity-50 transition"
+               className="bg-[var(--color-primary)] text-black px-4 py-3 sm:py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 min-w-[120px] disabled:opacity-50 transition"
             >
               {analyzingFood ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> Track</>}
             </button>

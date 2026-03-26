@@ -130,7 +130,7 @@ export default function PersonalRecords() {
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.03 }}
-              className="flex items-center justify-between p-4 rounded-2xl glass-card border border-[var(--color-border)] group hover:border-yellow-500/30 transition-all"
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl glass-card border border-[var(--color-border)] group hover:border-yellow-500/30 transition-all gap-4 sm:gap-0"
             >
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black ${
@@ -148,7 +148,7 @@ export default function PersonalRecords() {
                   </p>
                 </div>
               </div>
-              <div className="flex gap-3 text-right">
+              <div className="flex w-full sm:w-auto justify-between sm:justify-end gap-3 text-right pt-2 border-t border-[var(--color-border)] sm:pt-0 sm:border-0">
                 {pr.max_weight > 0 && (
                   <div>
                     <p className="text-sm font-black text-[var(--color-text)]">{pr.max_weight}<span className="text-xs text-[var(--color-text-secondary)] ml-0.5">kg</span></p>

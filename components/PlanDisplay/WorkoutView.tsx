@@ -159,7 +159,7 @@ export default function WorkoutView({
                           className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors flex justify-center items-center gap-1.5 text-xs md:text-sm"
                         >
                           <Youtube size={16} />
-                          <span className="hidden xs:inline">Tutorial</span>
+                          <span className="hidden sm:inline">Tutorial</span>
                         </a>
 
                         {/* AI Image */}
@@ -173,7 +173,7 @@ export default function WorkoutView({
                           className="p-2 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg text-blue-400 flex items-center justify-center gap-1.5 hover:bg-[var(--color-border)] transition-all text-xs md:text-sm"
                         >
                           <ImageIcon size={16} />
-                          <span className="hidden xs:inline">Demo</span>
+                          <span className="hidden sm:inline">Demo</span>
                         </button>
 
                         {/* ⏱️ Timer Button */}
@@ -190,7 +190,7 @@ export default function WorkoutView({
                           title="Start workout timer"
                         >
                           <Timer size={16} />
-                          <span className="hidden xs:inline">Timer</span>
+                          <span className="hidden sm:inline">Timer</span>
                         </button>
 
                         {/* ✨ Posture Check Button */}
@@ -200,7 +200,7 @@ export default function WorkoutView({
                           title="Check your posture with AI camera"
                         >
                           <Scan size={16} />
-                          <span className="hidden xs:inline">Check</span>
+                          <span className="hidden sm:inline">Check</span>
                         </button>
                       </div>
                     </div>

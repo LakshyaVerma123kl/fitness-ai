@@ -393,7 +393,7 @@ export default function ProgressTracker({
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="glass-card p-6 rounded-2xl border border-[var(--color-border)]">
+        <div className="glass-card p-6 rounded-2xl border border-[var(--color-border)] overflow-hidden">
           <h3 className="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
             <Calendar size={18} className="text-purple-400" /> Weekly
             Consistency
@@ -422,7 +422,7 @@ export default function ProgressTracker({
           </div>
         </div>
 
-        <div className="glass-card p-6 rounded-2xl border border-[var(--color-border)]">
+        <div className="glass-card p-6 rounded-2xl border border-[var(--color-border)] overflow-hidden">
           <h3 className="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
             <TrendingUp size={18} className="text-blue-400" /> Weight Trend
           </h3>

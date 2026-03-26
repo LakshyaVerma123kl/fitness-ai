@@ -82,7 +82,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
 
   // 🎨 Standardized Styles for Light/Dark Mode Compatibility
   const inputClass =
-    "w-full p-2.5 sm:p-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg focus:border-primary focus:outline-none text-[var(--color-text)] placeholder-[var(--color-text-secondary)] text-sm sm:text-base transition-colors";
+    "w-full p-2.5 sm:p-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg focus:border-primary focus:outline-none text-[var(--color-text)] placeholder-[var(--color-text-secondary)] text-base transition-colors";
 
   const labelClass =
     "block text-xs sm:text-sm text-[var(--color-text-secondary)] mb-1.5 sm:mb-2 font-medium";
