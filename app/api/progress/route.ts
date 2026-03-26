@@ -35,12 +35,24 @@ export async function GET() {
     const supabase = getSupabaseClient();
 
     // 1. Fetch last 30 days for the chart
-    const { data: recentData, error: recentError } = await supabase
+    const { data: rawRecentData, error: recentError } = await supabase
       .from("daily_progress")
       .select("*")
       .eq("user_id", userId)
       .order("date", { ascending: true })
-      .limit(30);
+      .order("id", { ascending: false }) // Get newest first if duplicates exist
+      .limit(60);
+
+    // Deduplicate in memory just in case the DB has duplicates from before
+    const recentDataMap = new Map();
+    if (rawRecentData) {
+      rawRecentData.forEach(entry => {
+        if (!recentDataMap.has(entry.date)) {
+          recentDataMap.set(entry.date, entry);
+        }
+      });
+    }
+    const recentData = Array.from(recentDataMap.values()).reverse().slice(0, 30).reverse();
 
     if (recentError) {
       console.error("Recent data error:", recentError);
@@ -164,19 +176,44 @@ export async function POST(req: Request) {
 
     const supabase = getSupabaseClient();
 
-    const { data, error } = await supabase
+    // Check if entry exists for today
+    const { data: existing } = await supabase
       .from("daily_progress")
-      .upsert(
-        {
+      .select("id")
+      .eq("user_id", userId)
+      .eq("date", date)
+      .limit(1);
+
+    let data, error;
+
+    if (existing && existing.length > 0) {
+      // Update existing
+      const res = await supabase
+        .from("daily_progress")
+        .update({
+          weight: weight || null,
+          mood: mood || null,
+          workout_completed: workout_completed || false,
+        })
+        .eq("id", existing[0].id)
+        .select();
+      data = res.data;
+      error = res.error;
+    } else {
+      // Insert new
+      const res = await supabase
+        .from("daily_progress")
+        .insert({
           user_id: userId,
           date,
           weight: weight || null,
           mood: mood || null,
           workout_completed: workout_completed || false,
-        },
-        { onConflict: "user_id, date" },
-      )
-      .select();
+        })
+        .select();
+      data = res.data;
+      error = res.error;
+    }
 
     if (error) {
       console.error("Supabase upsert error:", error);

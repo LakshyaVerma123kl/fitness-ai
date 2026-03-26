@@ -53,6 +53,24 @@ export async function POST(req: Request) {
     }
 
     const supabase = getSupabaseClient();
+
+    // Prevent duplicate logs for the same exercise on the same day (due to rapid UI clicking)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const { data: existing } = await supabase
+      .from("workout_logs")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("exercise_name", exercise_name)
+      .gte("logged_at", todayStart.toISOString())
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      // Already logged today, just return success
+      return NextResponse.json({ success: true, log: existing[0], note: "Already logged today" });
+    }
+
     const { data, error } = await supabase
       .from("workout_logs")
       .insert({
