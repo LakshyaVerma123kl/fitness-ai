@@ -66,7 +66,6 @@ const FEATURES = [
 ];
 
 export default function Home() {
-  const { isSignedIn } = useUser();
   const { theme, setTheme } = useTheme();
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -136,7 +135,6 @@ export default function Home() {
           )}
           <SignedOut>
             <Link href="/sign-in"><button className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium hover:text-[var(--color-primary)] transition">Sign In</button></Link>
-            <Link href="/sign-up"><button className="px-3 sm:px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-blue-500 text-black text-xs sm:text-sm font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-green-500/20">Get Started</button></Link>
           </SignedOut>
           <SignedIn>
             <Link href="/dashboard">
@@ -157,67 +155,86 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {/* Hero Section */}
-            <section className="py-16 sm:py-24 text-center relative">
-              {/* Badge */}
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-bold tracking-wider mb-6"
-              >
-                <Zap size={12} /> POWERED BY GEMINI AI
-              </motion.div>
+            {/* Hero & Form Section */}
+            <section className="py-12 sm:py-20 relative">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center text-center lg:text-left">
+                
+                {/* Left Column: Hero Text */}
+                <div>
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-bold tracking-wider mb-6"
+                  >
+                    <Zap size={12} /> POWERED BY GEMINI AI
+                  </motion.div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="text-5xl sm:text-7xl lg:text-8xl font-black mb-6 tracking-tighter leading-none"
-              >
-                YOUR AI{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-primary)] via-blue-400 to-purple-500">
-                  PERSONAL
-                </span>
-                <br />
-                TRAINER
-              </motion.h1>
+                  <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="text-5xl sm:text-6xl font-black mb-6 tracking-tighter leading-none"
+                  >
+                    YOUR AI{" "}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-primary)] via-blue-400 to-purple-500">
+                      PERSONAL
+                    </span>
+                    <br />
+                    TRAINER
+                  </motion.h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-lg sm:text-xl text-[var(--color-text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed"
-              >
-                Medical-safe AI fitness plans + real-time pose detection + voice coaching + body analytics.<br className="hidden sm:block" />
-                <strong className="text-[var(--color-text)]">Everything a personal trainer does, free.</strong>
-              </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-lg text-[var(--color-text-secondary)] mb-10 leading-relaxed"
+                  >
+                    Medical-safe AI fitness plans + real-time pose detection + voice coaching + body analytics.<br className="hidden sm:block mt-2" />
+                    <strong className="text-[var(--color-text)]">Generate a plan using the form to get started.</strong>
+                  </motion.p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="flex flex-wrap items-center justify-center gap-4"
-              >
-                <SignedOut>
-                  <Link href="/sign-up">
-                    <button className="px-8 py-4 bg-gradient-to-r from-[var(--color-primary)] to-blue-500 text-black font-black rounded-2xl hover:opacity-90 transition shadow-2xl shadow-green-500/30 text-base flex items-center gap-2 group">
-                      Start Free <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </Link>
-                  <Link href="#generate">
-                    <button className="px-8 py-4 bg-[var(--color-card)] border border-[var(--color-border)] text-[var(--color-text)] font-bold rounded-2xl hover:border-[var(--color-primary)] transition text-base flex items-center gap-2">
-                      <Play size={16} className="text-[var(--color-primary)]" /> Try Demo
-                    </button>
-                  </Link>
-                </SignedOut>
-                <SignedIn>
-                  <Link href="/dashboard">
-                    <button className="px-8 py-4 bg-gradient-to-r from-[var(--color-primary)] to-blue-500 text-black font-black rounded-2xl hover:opacity-90 transition shadow-2xl shadow-green-500/30 text-base flex items-center gap-2 group">
-                      Open Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </Link>
-                </SignedIn>
-              </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex flex-wrap items-center justify-center lg:justify-start gap-4"
+                  >
+                    <SignedOut>
+                      <Link href="/sign-up">
+                        <button className="px-8 py-4 bg-gradient-to-r from-[var(--color-primary)] to-blue-500 text-black font-black rounded-2xl hover:opacity-90 transition shadow-lg text-base flex items-center gap-2 group">
+                          Create Free Account <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                      </Link>
+                    </SignedOut>
+                    <SignedIn>
+                      <Link href="/dashboard">
+                        <button className="px-8 py-4 bg-gradient-to-r from-[var(--color-primary)] to-blue-500 text-black font-black rounded-2xl hover:opacity-90 transition shadow-lg text-base flex items-center gap-2 group">
+                          Open Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                      </Link>
+                    </SignedIn>
+                  </motion.div>
+                </div>
+
+                {/* Right Column: The Form */}
+                <motion.div 
+                   initial={{ opacity: 0, x: 20 }}
+                   animate={{ opacity: 1, x: 0 }}
+                   transition={{ delay: 0.4 }}
+                   className="w-full max-w-xl mx-auto lg:mx-0 relative z-10 glass-card p-6 border border-[var(--color-border)] rounded-3xl shadow-2xl bg-[var(--color-dark)]/90 backdrop-blur-3xl"
+                >
+                  <h3 className="text-2xl font-black mb-1 text-[var(--color-text)]">Build Your Free Plan</h3>
+                  <p className="text-xs text-[var(--color-text-secondary)] mb-6">Enter your stats to automatically generate a personalized workout & diet plan.</p>
+                  
+                  {error && (
+                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-center text-sm">
+                      ⚠️ {error}
+                    </div>
+                  )}
+
+                  <FitnessForm onSubmit={handleGenerate} isLoading={loading} />
+                </motion.div>
+              </div>
             </section>
 
             {/* Features Grid */}
@@ -240,31 +257,6 @@ export default function Home() {
               </motion.div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
-              </div>
-            </section>
-
-            {/* Generator Section */}
-            <section id="generate" className="py-16">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-center mb-10"
-              >
-                <h2 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2">
-                  Generate your plan now
-                </h2>
-                <p className="text-[var(--color-text-secondary)]">
-                  Free, personalized, ready in ~30 seconds.
-                </p>
-              </motion.div>
-              {error && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-center">
-                  ⚠️ {error}
-                </div>
-              )}
-              <div className="w-full max-w-2xl mx-auto">
-                <FitnessForm onSubmit={handleGenerate} isLoading={loading} />
               </div>
             </section>
 
