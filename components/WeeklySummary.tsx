@@ -29,14 +29,31 @@ export default function WeeklySummary({ userGoal }: { userGoal?: string }) {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [quoteIdx] = useState(() => Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length));
+  const [quoteIdx] = useState(() => {
+    const today = new Date().toISOString().split("T")[0];
+    let hash = 0;
+    for (let i = 0; i < today.length; i++) hash += today.charCodeAt(i);
+    return hash % MOTIVATIONAL_QUOTES.length;
+  });
 
   // Auto-load on mount
   useEffect(() => {
-    fetchSummary();
-  }, []);
+    if (user) fetchSummary(false);
+  }, [user]);
 
-  const fetchSummary = async () => {
+  const fetchSummary = async (forceRefresh = false) => {
+    const today = new Date().toISOString().split("T")[0];
+    const cacheKey = `weekly_summary_${user?.id}_${today}`;
+
+    if (!forceRefresh) {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        setSummaryData(JSON.parse(cached));
+        setLoaded(true);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/weekly-summary", {
@@ -50,6 +67,7 @@ export default function WeeklySummary({ userGoal }: { userGoal?: string }) {
       const data = await res.json();
       if (res.ok) {
         setSummaryData(data);
+        localStorage.setItem(cacheKey, JSON.stringify(data));
         setLoaded(true);
       }
     } catch (e) {
@@ -90,10 +108,10 @@ export default function WeeklySummary({ userGoal }: { userGoal?: string }) {
               Weekly AI Coaching Summary
             </h3>
             <button
-              onClick={fetchSummary}
+              onClick={() => fetchSummary(true)}
               disabled={loading}
-              className="p-2 rounded-full hover:bg-white/5 transition text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"
-              title="Refresh summary"
+              className="p-2 rounded-full hover:bg-white/5 transition text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] shrink-0"
+              title="Force refresh summary"
             >
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             </button>
