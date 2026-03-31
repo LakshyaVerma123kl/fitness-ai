@@ -1,6 +1,12 @@
 // app/api/pose-profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { generateWithFallback } from "@/utils/llm";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase Admin Client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const MOVENET_KPS = [
   "nose",
@@ -143,6 +149,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const cleanExercise = exercise.trim().toLowerCase();
+
+  // 1. CHECK CACHE FIRST
+  try {
+    const { data: cachedProfile } = await supabase
+      .from("pose_cache")
+      .select("profile_data")
+      .eq("exercise_name", cleanExercise)
+      .single();
+
+    if (cachedProfile && cachedProfile.profile_data) {
+      console.log(`[pose-profile] ⚡️ Cache Hit for "${cleanExercise}"`);
+      return NextResponse.json({ 
+        profile: cachedProfile.profile_data, 
+        provider: "cache" 
+      });
+    }
+  } catch (err) {
+    console.warn("[pose-profile] Cache read error:", err);
+  }
+
+  // 2. GENERATE NEW IF NOT IN CACHE
+  console.log(`[pose-profile] 🤖 Cache Miss for "${cleanExercise}". Generating...`);
   const prompt = buildPrompt(exercise.trim());
 
   try {
@@ -150,6 +179,17 @@ export async function POST(req: NextRequest) {
     const profile = parseProfile(text);
     
     if (profile) {
+      // 3. SAVE TO CACHE
+      try {
+        await supabase.from("pose_cache").insert({
+          exercise_name: cleanExercise,
+          profile_data: profile
+        });
+        console.log(`[pose-profile] 💾 Saved "${cleanExercise}" to cache`);
+      } catch (err) {
+        console.warn("[pose-profile] Cache write error:", err);
+      }
+
       return NextResponse.json({ profile, provider: providerName });
     } else {
       throw new Error("Invalid output format");

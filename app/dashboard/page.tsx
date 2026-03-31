@@ -105,6 +105,27 @@ function FeedbackWidget({ planId, onDone }: { planId: string; onDone?: () => voi
   );
 }
 
+// ── Skeleton Loader ────────────────────────────────────────
+function SkeletonPlanCard() {
+  return (
+    <div className="glass-card p-5 sm:p-6 rounded-xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] h-[220px] flex flex-col">
+      <div className="flex justify-between items-start mb-6">
+        <div className="w-20 h-5 bg-[var(--color-border)]/50 rounded-full animate-pulse" />
+        <div className="flex gap-2">
+          <div className="w-6 h-6 bg-[var(--color-border)]/50 rounded-full animate-pulse" />
+          <div className="w-6 h-6 bg-[var(--color-border)]/50 rounded-full animate-pulse" />
+        </div>
+      </div>
+      <div className="w-2/3 h-6 bg-[var(--color-border)]/50 rounded-lg mb-3 animate-pulse" />
+      <div className="w-full flex-1 bg-[var(--color-border)]/30 rounded-lg mb-6 animate-pulse" />
+      <div className="flex justify-between items-center border-t border-[var(--color-border)] pt-4 mt-auto">
+        <div className="w-16 h-4 bg-[var(--color-border)]/50 rounded-lg animate-pulse" />
+        <div className="w-12 h-4 bg-[var(--color-border)]/50 rounded-lg animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 // ── Main Dashboard ─────────────────────────────────────────
 export default function Dashboard() {
   const { user, isLoaded } = useUser();
@@ -443,9 +464,11 @@ export default function Dashboard() {
             <motion.div key="plans" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {loading ? (
-                  <div className="col-span-full flex justify-center py-20">
-                    <Loader2 className="animate-spin text-[var(--color-primary)]" size={48} />
-                  </div>
+                  <>
+                    <SkeletonPlanCard />
+                    <SkeletonPlanCard />
+                    <SkeletonPlanCard />
+                  </>
                 ) : plans.length === 0 ? (
                   <div className="col-span-full text-center py-12 sm:py-20 glass-card rounded-2xl">
                     <Dumbbell size={40} className="mx-auto text-[var(--color-text-secondary)] mb-4 opacity-50" />
