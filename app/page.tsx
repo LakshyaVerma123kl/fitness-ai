@@ -166,7 +166,7 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-bold tracking-wider mb-6"
                   >
-                    <Zap size={12} /> POWERED BY GEMINI AI
+                    <Zap size={12} /> POWERED BY AI
                   </motion.div>
 
                   <motion.h1
