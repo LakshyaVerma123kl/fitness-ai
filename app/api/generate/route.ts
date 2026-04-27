@@ -2,11 +2,9 @@
 import { NextResponse } from "next/server";
 import { buildRagContext } from "@/utils/ragContext";
 import { generateWithFallback } from "@/utils/llm";
+import { calculateBMI, calculateBMR, calculateTDEE } from "@/lib/calculations";
 
-// ==========================================
 // 🚀 MAIN ROUTE HANDLER
-// ==========================================
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -38,28 +36,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // --- Local calculations ---
-    const heightInMeters = height / 100;
-    const bmi = parseFloat(
-      (weight / (heightInMeters * heightInMeters)).toFixed(1),
-    );
-
-    let bmr: number;
-    if (gender === "Male") {
-      bmr = Math.round(10 * weight + 6.25 * height - 5 * age + 5);
-    } else if (gender === "Female") {
-      bmr = Math.round(10 * weight + 6.25 * height - 5 * age - 161);
-    } else {
-      bmr = Math.round(10 * weight + 6.25 * height - 5 * age - 78);
-    }
-
-    const activityMultipliers: { [key: string]: number } = {
-      Sedentary: 1.2,
-      "Lightly Active": 1.375,
-      "Moderately Active": 1.55,
-      "Very Active": 1.725,
-    };
-    const tdee = Math.round(bmr * (activityMultipliers[activityLevel] || 1.2));
+    // --- Local calculations using shared utilities ---
+    const bmi = calculateBMI(weight, height);
+    const bmr = calculateBMR(weight, height, age, gender);
+    const tdee = calculateTDEE(bmr, activityLevel);
 
     // --- Health context ---
     const healthContext: string[] = [];
@@ -78,9 +58,8 @@ export async function POST(req: Request) {
           )}\n\nYou MUST consider these factors when creating the plan.`
         : "";
 
-    // =========================================
     // 🧠 RAG: Fetch similar highly-rated plans
-    // =========================================
+
     const ragContext = await buildRagContext({
       goal,
       age: Number(age),
@@ -96,9 +75,9 @@ export async function POST(req: Request) {
       sleepHours: sleepHours ? Number(sleepHours) : undefined,
       stressLevel: stressLevel,
     });
-    // =========================================
+
     // 🧠 PROMPT (RAG examples injected at top)
-    // =========================================
+
     const prompt = `You are an elite Personal Trainer, Nutritionist, and Health Professional.
 Generate a highly detailed, SAFE, and personalized fitness plan in JSON format only. No markdown, no intro text.
 ${ragContext}
@@ -266,9 +245,7 @@ REQUIRED JSON STRUCTURE:
 
 Generate a comprehensive, safe, and personalized plan now.`;
 
-    // =========================================
-    // 🔄 Provider Fallback Loop
-    // =========================================
+    // 🧠 RAG INJECTION (AI CONTEXT)
     try {
       const systemPrompt = "You are an expert fitness coach and nutritionist with medical knowledge. Prioritize safety and health. Return ONLY valid JSON. Do not include markdown formatting.";
       const { text: responseText, providerName } = await generateWithFallback(prompt, systemPrompt);

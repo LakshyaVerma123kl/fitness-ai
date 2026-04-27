@@ -1,10 +1,17 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
+    // Auth check — prevent unauthenticated email triggers
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { email, name, type } = await req.json();
 
     if (!email)
@@ -24,14 +31,15 @@ export async function POST(req: Request) {
     }
 
     const data = await resend.emails.send({
-      from: "FitnessAI <onboarding@resend.dev>", // Update this if you have a domain
+      from: "FitnessAI <onboarding@resend.dev>",
       to: [email],
       subject: subject,
       html: html,
     });
 
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

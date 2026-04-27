@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/generate(.*)",
   "/api/generate-image(.*)",
   "/api/pose-profile(.*)",
+  "/api/plans/ping",
 ]);
 
 const isApiRoute = createRouteMatcher(["/api/(.*)"]);

@@ -23,9 +23,8 @@ import {
 
 import { ScoreRing, PoseScoreArea, PoseIssuesArea, PosePraisesArea, PoseJointsArea } from "./PoseDetectionUI";
 
-// ─────────────────────────────────────────────────────────────
 // Types
-// ─────────────────────────────────────────────────────────────
+
 // Types now imported from utils/poseAnalysis.ts
 
 import { 
@@ -39,9 +38,8 @@ import {
 import { usePoseDetection, Stage, AngleMarker } from "@/utils/usePoseDetection";
 import { resolveProfile, matchHardcoded } from "@/utils/poseAnalysis";
 
-// ─────────────────────────────────────────────────────────────
 // MoveNet keypoints
-// ─────────────────────────────────────────────────────────────
+
 const MOVENET_KPS = [
   "nose",
   "left_eye",
@@ -64,9 +62,8 @@ const MOVENET_KPS = [
 
 // Types now imported from utils/poseAnalysis.ts
 
-// ─────────────────────────────────────────────────────────────
 // Canvas drawing
-// ─────────────────────────────────────────────────────────────
+
 const CONNECTIONS: [string, string][] = [
   ["left_shoulder", "right_shoulder"],
   ["left_shoulder", "left_elbow"],
@@ -182,9 +179,8 @@ function buildMarkers(
     });
 }
 
-// ─────────────────────────────────────────────────────────────
 // Voice
-// ─────────────────────────────────────────────────────────────
+
 let lastSpokenIssue = "";
 let lastRepSpoken = -1;
 function speak(text: string) {
@@ -199,9 +195,8 @@ function speak(text: string) {
 
 // Used from PoseDetectionUI.tsx
 
-// ─────────────────────────────────────────────────────────────
 // Source badge
-// ─────────────────────────────────────────────────────────────
+
 function SourceBadge({
   source,
   provider,
@@ -233,9 +228,8 @@ function SourceBadge({
   );
 }
 
-// ─────────────────────────────────────────────────────────────
 // Main Modal
-// ─────────────────────────────────────────────────────────────
+
 interface Props {
   exerciseName: string;
   onClose: () => void;

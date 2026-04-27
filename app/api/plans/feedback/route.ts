@@ -1,20 +1,7 @@
 // app/api/plans/feedback/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { auth } from "@clerk/nextjs/server";
-
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      `Missing Supabase env vars. URL: ${!!supabaseUrl}, KEY: ${!!supabaseKey}`,
-    );
-  }
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 3. Check plan exists + belongs to user ─────────────────────
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     const { data: existingPlan, error: fetchError } = await supabase
       .from("fitness_plans")

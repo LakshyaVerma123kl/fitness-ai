@@ -1,26 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { auth } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { calculateBMI } from "@/lib/calculations";
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-// Validate environment variables
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      "Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
-    );
-  }
-
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
 
 // GET: Fetch all plans for the logged-in user
 export async function GET() {
@@ -31,7 +15,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
       .from("fitness_plans")
@@ -80,17 +64,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate BMI based on user data
+    // Calculate BMI using shared utility
     const height = parseFloat(userData.height) || 0;
     const weight = parseFloat(userData.weight) || 0;
-    let bmi = 0;
+    const bmi = calculateBMI(weight, height);
 
-    if (height > 0) {
-      const heightInMeters = height / 100;
-      bmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(1));
-    }
-
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
       .from("fitness_plans")
@@ -143,7 +122,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Missing plan ID" }, { status: 400 });
     }
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     // Security check: ensure user can only delete their own plans
     const { error } = await supabase

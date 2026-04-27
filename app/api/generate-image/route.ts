@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// ==========================================
 // ⚙️ CONFIGURATION & SUPABASE SETUP
-// ==========================================
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -17,9 +15,7 @@ const IMAGE_PROVIDERS = [
   { name: "huggingface", model: "stabilityai/stable-diffusion-xl-base-1.0" },
 ];
 
-// ==========================================
 // 🔌 AI PROVIDER HELPERS
-// ==========================================
 
 // Pollinations
 async function callPollinations(prompt: string) {
@@ -209,9 +205,7 @@ async function callHuggingFace(prompt: string) {
   }
 }
 
-// ==========================================
 // 🚀 MAIN ROUTE
-// ==========================================
 
 export async function POST(req: Request) {
   try {
@@ -305,7 +299,6 @@ export async function POST(req: Request) {
         console.warn(`❌ Provider ${provider.name} failed:`, e);
       }
     }
-
 
     // Fallback if literally everything fails
     if (!imageBuffer) {

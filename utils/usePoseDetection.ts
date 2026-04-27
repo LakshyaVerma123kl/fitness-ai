@@ -1,3 +1,15 @@
+/**
+ * usePoseDetection Hook
+ * 
+ * This custom hook manages the entire lifecycle of the TensorFlow.js MoveNet pose detection model.
+ * It handles:
+ * 1. Camera initialization and permissions
+ * 2. TensorFlow backend initialization (WebGPU/WebGL)
+ * 3. Loading the MoveNet model
+ * 4. Fetching/generating the biomechanics profile for the selected exercise
+ * 5. Running the animation frame loop to estimate poses
+ * 6. Managing the text-to-speech voice coaching queues
+ */
 import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   Keypoint, 
@@ -177,8 +189,8 @@ export function usePoseDetection(
   const fpsTime = useRef(Date.now());
   
   // Voice state
-  let lastSpokenIssue = useRef("");
-  let lastRepSpoken = useRef(-1);
+  const lastSpokenIssue = useRef("");
+  const lastRepSpoken = useRef(-1);
 
   useEffect(() => {
     voiceRef.current = voiceOn;
@@ -238,7 +250,10 @@ export function usePoseDetection(
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      // Pose estimation can fail on corrupted frames — log but don't crash
+      if (e instanceof Error) console.warn("Pose estimation error:", e.message);
+    }
     rafRef.current = requestAnimationFrame(loop);
   }, [videoRef, canvasRef]);
 

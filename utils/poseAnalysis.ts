@@ -1,3 +1,12 @@
+/**
+ * Pose Analysis & Biomechanics Engine
+ * 
+ * This file contains pure mathematical and physics logic decoupled from React.
+ * It takes raw 2D keypoints (x, y coordinates) from TensorFlow MoveNet and translates them into:
+ * 1. Joint angles (e.g., knee flexion, elbow extension)
+ * 2. Repetition counting states (eccentric vs concentric phases)
+ * 3. Form feedback (identifying if a joint angle violates the exercise profile constraints)
+ */
 export interface Keypoint {
   x: number;
   y: number;
@@ -53,9 +62,8 @@ export interface PostureResult {
   phase?: string;
 }
 
-// ─────────────────────────────────────────────────────────────
 // MoveNet keypoints
-// ─────────────────────────────────────────────────────────────
+
 const MOVENET_KPS = [
   "nose",
   "left_eye",
@@ -76,9 +84,8 @@ const MOVENET_KPS = [
   "right_ankle",
 ];
 
-// ─────────────────────────────────────────────────────────────
 // HARDCODED profiles for the original 7 exercises (fallback)
-// ─────────────────────────────────────────────────────────────
+
 const HARDCODED_PROFILES: Record<string, ExerciseProfile> = {
   squat: {
     exerciseName: "Squat",
@@ -452,9 +459,8 @@ Critical rules:
 - repUpThreshold: angle going above this = rep completed
 - goodRange must reflect CORRECT form degrees for this specific exercise`;
 
-// ─────────────────────────────────────────────────────────────
 // Fetch via internal API route (keeps env keys server-side)
-// ─────────────────────────────────────────────────────────────
+
 export async function fetchProfileFromRoute(
   exercise: string,
 ): Promise<{ profile: ExerciseProfile; provider: string } | null> {
@@ -473,9 +479,8 @@ export async function fetchProfileFromRoute(
   }
 }
 
-// ─────────────────────────────────────────────────────────────
 // Parse + validate AI response
-// ─────────────────────────────────────────────────────────────
+
 export function parseProfile(
   text: string,
   source: "ai" | "hardcoded" | "fallback" = "ai",
@@ -555,9 +560,8 @@ export function genericFallback(exercise: string): ExerciseProfile {
   };
 }
 
-// ─────────────────────────────────────────────────────────────
 // Profile resolution: hardcoded → AI route → generic fallback
-// ─────────────────────────────────────────────────────────────
+
 export async function resolveProfile(
   exercise: string,
 ): Promise<{ profile: ExerciseProfile; provider: string }> {

@@ -1,28 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { calculateStreaks } from "@/lib/streaks";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-// Validate environment variables
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      "Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
-    );
-  }
-
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
 
 export async function GET() {
   try {
@@ -32,7 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     // 1. Fetch last 30 days for the chart
     const { data: rawRecentData, error: recentError } = await supabase
@@ -81,70 +63,12 @@ export async function GET() {
       );
     }
 
-    // 3. Calculate Streaks
-    let currentStreak = 0;
-    let longestStreak = 0;
-
-    if (allCompleted && allCompleted.length > 0) {
-      const today = new Date().toISOString().split("T")[0];
-      const yesterday = new Date(Date.now() - 86400000)
-        .toISOString()
-        .split("T")[0];
-
-      // Set unique dates set for O(1) lookup
-      const completedSet = new Set(allCompleted.map((e) => e.date));
-      const dates = Array.from(completedSet).sort().reverse(); // Descending YYYY-MM-DD
-
-      // --- Calculate Current Streak ---
-      // Streak is alive if we did it Today OR Yesterday
-      if (completedSet.has(today) || completedSet.has(yesterday)) {
-        let dateCheck = new Date();
-        // If not done today, start checking from yesterday
-        if (!completedSet.has(today)) {
-          dateCheck.setDate(dateCheck.getDate() - 1);
-        }
-
-        while (true) {
-          const dateStr = dateCheck.toISOString().split("T")[0];
-          if (completedSet.has(dateStr)) {
-            currentStreak++;
-            dateCheck.setDate(dateCheck.getDate() - 1);
-          } else {
-            break;
-          }
-        }
-      }
-
-      // --- Calculate Longest Streak ---
-      let tempStreak = 0;
-      for (let i = 0; i < dates.length; i++) {
-        const current = new Date(dates[i]);
-        const next = i < dates.length - 1 ? new Date(dates[i + 1]) : null;
-
-        tempStreak++;
-
-        if (next) {
-          const diffTime = Math.abs(current.getTime() - next.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-          if (diffDays > 1) {
-            // Gap found, reset
-            longestStreak = Math.max(longestStreak, tempStreak);
-            tempStreak = 0;
-          }
-        } else {
-          // End of list
-          longestStreak = Math.max(longestStreak, tempStreak);
-        }
-      }
-    }
+    // 3. Calculate streaks using shared utility
+    const { currentStreak, longestStreak } = calculateStreaks(allCompleted || []);
 
     return NextResponse.json({
       entries: recentData || [],
-      stats: {
-        currentStreak,
-        longestStreak,
-      },
+      stats: { currentStreak, longestStreak },
     });
   } catch (error: any) {
     console.error("Error in GET /api/progress:", error);
@@ -174,7 +98,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 });
     }
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     // Check if entry exists for today
     const { data: existing } = await supabase

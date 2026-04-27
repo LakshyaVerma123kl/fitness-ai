@@ -36,15 +36,8 @@ import ImageModal from "./ImageModal";
 import Toast from "../Toast";
 import { generateAndDownloadPDF } from "../../utils/pdfExports";
 import { generateGoogleCalendarUrl } from "../../utils/googleCalendar";
+import { MEAL_ORDER } from "@/lib/constants";
 
-const MEAL_ORDER = [
-  "breakfast",
-  "mid_morning_snack",
-  "lunch",
-  "afternoon_snack",
-  "dinner",
-  "evening_snack",
-];
 function FeedbackWidget({
   planId,
   onDone,

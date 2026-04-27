@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { generateWithFallback } from "@/utils/llm";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +14,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { userName, userGoal } = body;
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     // Get last 7 days of progress
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];

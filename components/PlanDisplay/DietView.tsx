@@ -21,23 +21,7 @@ import {
 } from "lucide-react";
 
 const COLORS = ["#3b82f6", "#10b981", "#eab308"];
-const MEAL_ORDER = [
-  "breakfast",
-  "mid_morning_snack",
-  "lunch",
-  "afternoon_snack",
-  "dinner",
-  "evening_snack",
-];
-
-const MEAL_LABELS: { [key: string]: string } = {
-  breakfast: "Breakfast",
-  mid_morning_snack: "Mid-Morning Snack",
-  lunch: "Lunch",
-  afternoon_snack: "Afternoon Snack",
-  dinner: "Dinner",
-  evening_snack: "Evening Snack",
-};
+import { MEAL_ORDER, MEAL_LABELS } from "@/lib/constants";
 
 export default function DietView({
   plan,

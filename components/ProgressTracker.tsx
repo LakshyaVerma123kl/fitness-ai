@@ -29,7 +29,6 @@ import {
   Quote,
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
-import html2canvas from "html2canvas";
 import Toast from "./Toast";
 
 interface ProgressEntry {

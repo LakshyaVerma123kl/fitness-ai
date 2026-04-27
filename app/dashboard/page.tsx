@@ -9,17 +9,22 @@ import {
   Award, Star, Activity, Ruler, BarChart3, Zap, TrendingUp, Trophy
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import PlanDisplay from "@/components/PlanDisplay";
-import ProgressTracker from "@/components/ProgressTracker";
-import DailyMacroLogger from "@/components/DailyMacroLogger";
-import WorkoutLogTracker from "@/components/WorkoutLogTracker";
-import BodyMeasurements from "@/components/BodyMeasurements";
-import WeeklySummary from "@/components/WeeklySummary";
-import ActivityHeatmap from "@/components/ActivityHeatmap";
-import PersonalRecords from "@/components/PersonalRecords";
-import TodaysWorkout from "@/components/TodaysWorkout";
+import dynamic from "next/dynamic";
+
+const PlanDisplay = dynamic(() => import("@/components/PlanDisplay"), { 
+  ssr: false, 
+  loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin text-emerald-500 w-8 h-8" /></div> 
+});
+const ProgressTracker = dynamic(() => import("@/components/ProgressTracker"), { ssr: false });
+const DailyMacroLogger = dynamic(() => import("@/components/DailyMacroLogger"), { ssr: false });
+const WorkoutLogTracker = dynamic(() => import("@/components/WorkoutLogTracker"), { ssr: false });
+const BodyMeasurements = dynamic(() => import("@/components/BodyMeasurements"), { ssr: false });
+const WeeklySummary = dynamic(() => import("@/components/WeeklySummary"), { ssr: false });
+const ActivityHeatmap = dynamic(() => import("@/components/ActivityHeatmap"), { ssr: false });
+const PersonalRecords = dynamic(() => import("@/components/PersonalRecords"), { ssr: false });
+const TodaysWorkout = dynamic(() => import("@/components/TodaysWorkout"), { ssr: false });
+const CycleSyncWidget = dynamic(() => import("@/components/CycleSyncWidget"), { ssr: false });
 import Toast from "@/components/Toast";
-import CycleSyncWidget from "@/components/CycleSyncWidget";
 
 // ── Dashboard Tab types ────────────────────────────────────
 type DashTab = "overview" | "workout-log" | "measurements" | "records" | "plans";

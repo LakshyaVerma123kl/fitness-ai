@@ -12,7 +12,7 @@ interface RagPlan {
   match_tier: number;
 }
 
-// ── Bucketing helpers ──────────────────────────────────────────────────────
+// Bucketing helpers
 
 function getAgeRange(age: number): string {
   if (age <= 17) return "13-17";
@@ -39,7 +39,7 @@ function normaliseEquipment(equipment: string): string {
   return "No Equipment";
 }
 
-// ── Params ─────────────────────────────────────────────────────────────────
+// Params
 
 export interface RagParams {
   goal: string;
@@ -57,7 +57,7 @@ export interface RagParams {
   stressLevel?: string;
 }
 
-// ── Main export ────────────────────────────────────────────────────────────
+// Main export
 
 export async function buildRagContext(params: RagParams): Promise<string> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -94,7 +94,7 @@ export async function buildRagContext(params: RagParams): Promise<string> {
 
     const plans = data as RagPlan[];
 
-    // ── Format each example into a rich but token-efficient block ──
+    // Format each example into a rich but token-efficient block
     const examples = plans
       .map((p, i) => {
         const pd = p.plan_data;

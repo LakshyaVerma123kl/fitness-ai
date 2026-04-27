@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Moon, Sun, LayoutDashboard, Dumbbell, Brain, Scan, Play, Zap, Shield, BarChart3, Mic, ArrowRight } from "lucide-react";
-import { SignedIn, SignedOut, UserButton, useUser } from "@clerk/nextjs";
+import { Moon, Sun, LayoutDashboard, Dumbbell, Brain, Scan, Zap, Shield, BarChart3, Mic, ArrowRight } from "lucide-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import FitnessForm from "@/components/FitnessForm";
