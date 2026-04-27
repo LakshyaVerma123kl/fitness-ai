@@ -1,10 +1,26 @@
-// app/api/generate/route.ts
+/**
+ * POST /api/generate
+ *
+ * Core plan generation endpoint. This route implements a two-tier strategy:
+ *
+ * Tier 1 — Zero-Token Reuse (RAG Cache Hit)
+ *   If a dimensionally identical user (same goal, diet, level, gender, age
+ *   bucket, BMI bucket) has already generated a 4+ star rated plan AND the
+ *   incoming user has no custom medical conditions, we clone that plan,
+ *   mathematically rescale the macros to the new user's exact TDEE, and
+ *   return it instantly. This saves 100% of LLM tokens.
+ *
+ * Tier 2 — LLM Generation with RAG Context
+ *   If no exact match exists (or the user has medical flags), we inject
+ *   historical plan summaries as few-shot examples into the LLM prompt
+ *   and generate a fresh plan via the multi-provider fallback chain
+ *   (Groq -> Gemini -> HuggingFace).
+ */
 import { NextResponse } from "next/server";
 import { buildRagContext } from "@/utils/ragContext";
 import { generateWithFallback } from "@/utils/llm";
 import { calculateBMI, calculateBMR, calculateTDEE } from "@/lib/calculations";
 
-// 🚀 MAIN ROUTE HANDLER
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -29,6 +45,7 @@ export async function POST(req: Request) {
       activityLevel,
     } = body;
 
+    // Validate required biometric inputs
     if (!age || !weight || !height) {
       return NextResponse.json(
         { error: "Age, Weight, and Height are required to calculate plans." },
@@ -36,31 +53,34 @@ export async function POST(req: Request) {
       );
     }
 
-    // --- Local calculations using shared utilities ---
+    // Compute biometric baselines using shared utility functions
     const bmi = calculateBMI(weight, height);
     const bmr = calculateBMR(weight, height, age, gender);
     const tdee = calculateTDEE(bmr, activityLevel);
 
-    // --- Health context ---
+    // Aggregate health flags for safety-critical prompt injection
     const healthContext: string[] = [];
-    if (allergies) healthContext.push(`🚨 ALLERGIES: ${allergies}`);
+    if (allergies) healthContext.push(`ALLERGIES: ${allergies}`);
     if (chronicConditions)
-      healthContext.push(`⚕️ CHRONIC CONDITIONS: ${chronicConditions}`);
-    if (injuries) healthContext.push(`🩹 INJURIES: ${injuries}`);
-    if (medications) healthContext.push(`💊 MEDICATIONS: ${medications}`);
+      healthContext.push(`CHRONIC CONDITIONS: ${chronicConditions}`);
+    if (injuries) healthContext.push(`INJURIES: ${injuries}`);
+    if (medications) healthContext.push(`MEDICATIONS: ${medications}`);
     if (medicalHistory)
-      healthContext.push(`📋 MEDICAL NOTES: ${medicalHistory}`);
+      healthContext.push(`MEDICAL NOTES: ${medicalHistory}`);
 
     const healthInfo =
       healthContext.length > 0
-        ? `\n\n⚠️ CRITICAL HEALTH CONSIDERATIONS:\n${healthContext.join(
+        ? `\n\nCRITICAL HEALTH CONSIDERATIONS:\n${healthContext.join(
             "\n",
           )}\n\nYou MUST consider these factors when creating the plan.`
         : "";
 
-    // 🧠 RAG: Fetch similar highly-rated plans
-
-    const ragContext = await buildRagContext({
+    // ---------------------------------------------------------------
+    //  STEP 1: RAG Retrieval
+    //  Query Supabase for similar historical plans. Returns both a
+    //  formatted context string for the LLM and an optional exact match.
+    // ---------------------------------------------------------------
+    const { contextString, exactMatchPlan } = await buildRagContext({
       goal,
       age: Number(age),
       bmi,
@@ -76,19 +96,74 @@ export async function POST(req: Request) {
       stressLevel: stressLevel,
     });
 
-    // 🧠 PROMPT (RAG examples injected at top)
+    // ---------------------------------------------------------------
+    //  STEP 2: Zero-Token Reuse (Tier 1)
+    //  If we found an exact match AND the user has no custom medical
+    //  conditions that would require the LLM to adapt the plan, we
+    //  clone the historical plan and rescale macros mathematically.
+    //
+    //  SAFETY GATE: Users with allergies, injuries, chronic conditions,
+    //  or medical history ALWAYS go through full LLM generation to
+    //  ensure the plan is safely modified for their specific needs.
+    // ---------------------------------------------------------------
+    const hasCustomMedical = Boolean(
+      allergies || injuries || chronicConditions || medicalHistory
+    );
 
+    if (exactMatchPlan && !hasCustomMedical) {
+      console.log("[RAG] Cache hit — bypassing LLM, scaling macros for TDEE:", tdee);
+
+      // Deep clone to avoid mutating cached data
+      const reusedPlan = JSON.parse(JSON.stringify(exactMatchPlan));
+
+      // Rescale macros using evidence-based splits:
+      //   Protein: 2.0g per kg bodyweight (muscle synthesis)
+      //   Fats:    0.8g per kg bodyweight (hormonal health)
+      //   Carbs:   remainder of TDEE calories
+      const proteinGrams = Math.round(Number(weight) * 2.0);
+      const fatGrams = Math.round(Number(weight) * 0.8);
+      const proteinCals = proteinGrams * 4;
+      const fatCals = fatGrams * 9;
+      const carbCals = Math.max(0, tdee - proteinCals - fatCals);
+      const carbGrams = Math.round(carbCals / 4);
+
+      if (!reusedPlan.diet) reusedPlan.diet = {};
+      reusedPlan.diet.macros = {
+        calories: tdee,
+        protein: proteinGrams,
+        carbs: carbGrams,
+        fats: fatGrams,
+      };
+
+      if (!reusedPlan.results_timeline) {
+        reusedPlan.results_timeline = {
+          estimated_start: "2-4 weeks",
+          milestones: [],
+        };
+      }
+
+      return NextResponse.json({
+        plan: reusedPlan,
+        provider: "cache-reuse",
+      });
+    }
+
+    // ---------------------------------------------------------------
+    //  STEP 3: Full LLM Generation (Tier 2)
+    //  Build a comprehensive prompt with RAG context injected and
+    //  generate via the multi-provider fallback chain.
+    // ---------------------------------------------------------------
     const prompt = `You are an elite Personal Trainer, Nutritionist, and Health Professional.
 Generate a highly detailed, SAFE, and personalized fitness plan in JSON format only. No markdown, no intro text.
-${ragContext}
+${contextString}
 USER PROFILE:
 - Name: ${name || "Athlete"}
 - Bio: ${age}yrs, ${gender}, ${weight}kg, ${height}cm (BMI: ${bmi})
 - BMR: ${bmr} kcal/day | TDEE: ${tdee} kcal/day
 - Goal: ${goal}
 - Experience: ${level}
-- Diet Preference: ${diet} ${diet === "Desi" || diet.includes("Indian") ? "\n🚨 CRITICAL DIET RULE: User selected Desi/Indian diet. YOU MUST use standard Indian household measures like 'katori' (bowl), 'pieces' (for roti/chapati). Suggest easily accessible Indian home-cooked meals (dal, sabzi, paneer, roti, rice)." : ""}
-- Equipment Access: ${equipment} ${equipment.includes("Light Home Workouts") ? "\n🚨 CRITICAL WORKOUT RULE: User requested Light Home Workouts. YOU MUST exclusively recommend extremely gentle, low-impact, joint-friendly exercises that require zero equipment and cause no severe strain. No heavy jumping." : ""}
+- Diet Preference: ${diet} ${diet === "Desi" || diet.includes("Indian") ? "\nCRITICAL DIET RULE: User selected Desi/Indian diet. YOU MUST use standard Indian household measures like 'katori' (bowl), 'pieces' (for roti/chapati). Suggest easily accessible Indian home-cooked meals (dal, sabzi, paneer, roti, rice)." : ""}
+- Equipment Access: ${equipment} ${equipment.includes("Light Home Workouts") ? "\nCRITICAL WORKOUT RULE: User requested Light Home Workouts. YOU MUST exclusively recommend extremely gentle, low-impact, joint-friendly exercises that require zero equipment and cause no severe strain. No heavy jumping." : ""}
 - Activity Level: ${activityLevel}
 - Sleep: ${sleepHours} hours/night
 - Water Intake: ${waterIntake}L/day
@@ -245,12 +320,16 @@ REQUIRED JSON STRUCTURE:
 
 Generate a comprehensive, safe, and personalized plan now.`;
 
-    // 🧠 RAG INJECTION (AI CONTEXT)
+    // Send to multi-provider LLM fallback chain
     try {
-      const systemPrompt = "You are an expert fitness coach and nutritionist with medical knowledge. Prioritize safety and health. Return ONLY valid JSON. Do not include markdown formatting.";
-      const { text: responseText, providerName } = await generateWithFallback(prompt, systemPrompt);
+      const systemPrompt =
+        "You are an expert fitness coach and nutritionist with medical knowledge. Prioritize safety and health. Return ONLY valid JSON. Do not include markdown formatting.";
+      const { text: responseText, providerName } = await generateWithFallback(
+        prompt,
+        systemPrompt,
+      );
 
-      // Clean & parse
+      // Parse and validate the LLM JSON response
       let cleanedText = responseText.trim();
       cleanedText = cleanedText
         .replace(/```json\s*/gi, "")
@@ -266,6 +345,7 @@ Generate a comprehensive, safe, and personalized plan now.`;
       cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
       const parsedData = JSON.parse(cleanedText);
 
+      // Structural validation — ensure critical sections exist
       if (!parsedData.workout || !Array.isArray(parsedData.workout))
         throw new Error("Invalid workout structure");
       if (!parsedData.diet || !parsedData.diet.meals)
@@ -276,7 +356,7 @@ Generate a comprehensive, safe, and personalized plan now.`;
         ];
       }
 
-      // ✅ Success — attach metadata including RAG info
+      // Attach generation metadata for debugging and analytics
       return NextResponse.json({
         ...parsedData,
         _metadata: {
@@ -287,11 +367,11 @@ Generate a comprehensive, safe, and personalized plan now.`;
           generatedAt: new Date().toISOString(),
           hasHealthConditions: healthContext.length > 0,
           healthFactorsConsidered: healthContext.length,
-          ragEnhanced: ragContext.length > 0,
+          ragEnhanced: contextString.length > 0,
         },
       });
     } catch (error: any) {
-      console.error("❌ Generation failed:", error);
+      console.error("[generate] LLM generation failed:", error);
       return NextResponse.json(
         {
           error: "Unable to generate plan. Please try again later.",
@@ -301,7 +381,7 @@ Generate a comprehensive, safe, and personalized plan now.`;
       );
     }
   } catch (error: any) {
-    console.error("❌ Critical Server Error:", error);
+    console.error("[generate] Critical server error:", error);
     return NextResponse.json(
       { error: "Internal Server Error", details: error.message },
       { status: 500 },
