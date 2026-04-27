@@ -4,7 +4,6 @@ import { dark } from "@clerk/themes";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../components/ThemeProvider";
-import GlobalChatWidget from "../components/GlobalChatWidget";
 
 // ── Optimized Font Loading (eliminates FOIT, boosts CLS score) ──
 const inter = Inter({

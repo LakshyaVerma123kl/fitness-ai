@@ -72,12 +72,14 @@
 - Fully responsive — mobile, tablet, desktop
 - Clerk authentication (Google, GitHub, email)
 
-### 🤖 RAG System
+### 🤖 RAG System & Zero-Token Reuse
 
-- Stores every generated plan in Supabase with user metadata
-- Users rate plans (1–5 stars) after saving
+- Stores every generated plan in Supabase with full user metadata
+- Users rate plans (1–5 stars) after saving — ratings drive future quality
 - Postgres RPC (`get_similar_plans`) finds dimensionally similar high-rated plans
-- Injects top matches as structured few-shot examples into the AI prompt
+- **Tier 1 — Zero-Token Reuse:** If an exact-match plan (same goal, diet, level, gender, age bucket, BMI bucket) with 4+ stars exists AND the user has no custom medical conditions, the system **bypasses the LLM entirely**, clones the proven plan, mathematically rescales macros to the new user's TDEE, and returns it instantly (0ms latency, 0 tokens consumed)
+- **Tier 2 — RAG-Enhanced LLM:** If no exact match exists (or user has medical flags), historical plan summaries are injected as few-shot examples into the LLM prompt for higher quality generation
+- **Safety Gate:** Users with allergies, injuries, or chronic conditions always go through full LLM generation to ensure safe modifications
 
 ---
 

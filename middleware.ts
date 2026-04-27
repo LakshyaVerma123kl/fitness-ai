@@ -1,3 +1,18 @@
+/**
+ * middleware.ts — Clerk Auth Boundary
+ *
+ * This middleware runs on every request (except static assets) and enforces
+ * authentication via Clerk. It defines two categories:
+ *
+ * PUBLIC ROUTES (no auth required):
+ *   - Landing page, sign-in/up, plan generation APIs, image gen, pose profile,
+ *     and the health-check ping endpoint (used by uptime monitors).
+ *
+ * PROTECTED ROUTES (auth required):
+ *   - All other routes. If unauthenticated:
+ *     - API routes → return 401 JSON (so the frontend can handle it)
+ *     - UI routes  → redirect to Clerk's sign-in page
+ */
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 

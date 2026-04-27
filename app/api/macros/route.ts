@@ -1,3 +1,10 @@
+/**
+ * GET/POST /api/macros — Daily Macro Logger
+ *
+ * GET:  Fetches the user's macro log for a specific date (defaults to today).
+ * POST: Upserts a daily macro entry (calories, protein, carbs, fats)
+ *       using Supabase's on-conflict strategy so only one row per date exists.
+ */
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";

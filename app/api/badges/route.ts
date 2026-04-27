@@ -1,3 +1,10 @@
+/**
+ * GET /api/badges — Gamification Badge Engine
+ *
+ * Derives which achievement badges the user has unlocked based on their
+ * workout streak history. Uses the shared calculateStreaks() utility to
+ * avoid duplicating streak logic across routes.
+ */
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";

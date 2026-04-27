@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Exclude private/API routes from indexing
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /onboarding/
+
+Sitemap: https://fitness-ai.vercel.app/sitemap.xml

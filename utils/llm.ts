@@ -1,6 +1,23 @@
+/**
+ * LLM Multi-Provider Fallback Service
+ *
+ * This module abstracts away all LLM provider details behind two functions:
+ *   - generateWithFallback()     → single-prompt text generation
+ *   - generateChatWithFallback() → multi-turn chat completion
+ *
+ * Both functions try providers in priority order and automatically fall back
+ * on failure. The priority chain is:
+ *   1. Groq (Llama 3.3 70B)    — fastest, free tier
+ *   2. Gemini 2.5 Flash         — Google's fastest model
+ *   3. Gemini Pro                — higher quality fallback
+ *   4. HuggingFace (Llama 3.3)  — last resort, slower
+ *
+ * Each provider is skipped (not failed) if its API key is missing,
+ * so the app gracefully degrades based on which keys are configured.
+ */
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Provider Configuration
+// Provider priority chain — tried in order, first success wins
 
 export const PROVIDERS = [
   {
