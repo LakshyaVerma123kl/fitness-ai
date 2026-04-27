@@ -24,6 +24,7 @@ const ActivityHeatmap = dynamic(() => import("@/components/ActivityHeatmap"), { 
 const PersonalRecords = dynamic(() => import("@/components/PersonalRecords"), { ssr: false });
 const TodaysWorkout = dynamic(() => import("@/components/TodaysWorkout"), { ssr: false });
 const CycleSyncWidget = dynamic(() => import("@/components/CycleSyncWidget"), { ssr: false });
+const AIChatCoach = dynamic(() => import("@/components/AIChatCoach"), { ssr: false });
 import Toast from "@/components/Toast";
 
 // ── Dashboard Tab types ────────────────────────────────────
@@ -602,6 +603,9 @@ export default function Dashboard() {
       </AnimatePresence>
 
       {toast?.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      
+      {/* ── AI Coach Chat (with active context) ── */}
+      <AIChatCoach planContext={selectedPlan?.user_data || plans[0]?.user_data} />
     </div>
   );
 }

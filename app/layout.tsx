@@ -121,7 +121,6 @@ export default function RootLayout({
             }}
           >
             {children}
-            <GlobalChatWidget />
           </ClerkProvider>
         </ThemeProvider>
       </body>
