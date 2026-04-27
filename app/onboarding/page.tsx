@@ -279,6 +279,7 @@ export default function OnboardingPage() {
                   <div>
                     <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Gender</label>
                     <select
+                      aria-label="Gender"
                       value={form.gender}
                       onChange={(e) => setForm({ ...form, gender: e.target.value })}
                       className="w-full px-3 py-3 rounded-xl bg-[var(--color-dark)] border border-[var(--color-border)] text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)]"
@@ -289,6 +290,7 @@ export default function OnboardingPage() {
                   <div>
                     <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Equipment</label>
                     <select
+                      aria-label="Equipment"
                       value={form.equipment}
                       onChange={(e) => setForm({ ...form, equipment: e.target.value })}
                       className="w-full px-3 py-3 rounded-xl bg-[var(--color-dark)] border border-[var(--color-border)] text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)]"

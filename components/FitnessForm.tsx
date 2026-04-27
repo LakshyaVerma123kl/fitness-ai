@@ -132,6 +132,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             <div>
               <label className={labelClass}>Gender</label>
               <select
+                aria-label="Gender"
                 name="gender"
                 value={formData.gender}
                 className={inputClass}
@@ -173,6 +174,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             <div>
               <label className={labelClass}>Fitness Goal</label>
               <select
+                aria-label="Fitness Goal"
                 name="goal"
                 value={formData.goal}
                 className={inputClass}
@@ -188,6 +190,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             <div>
               <label className={labelClass}>Fitness Level</label>
               <select
+                aria-label="Fitness Level"
                 name="level"
                 value={formData.level}
                 className={inputClass}
@@ -205,6 +208,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             <div>
               <label className={labelClass}>Diet Preference</label>
               <select
+                aria-label="Diet Preference"
                 name="diet"
                 value={formData.diet}
                 className={inputClass}
@@ -220,6 +224,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
             <div>
               <label className={labelClass}>Equipment Access</label>
               <select
+                aria-label="Equipment Access"
                 name="equipment"
                 value={formData.equipment}
                 className={inputClass}
@@ -270,6 +275,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
                           Daily Activity Level
                         </label>
                         <select
+                          aria-label="Daily Activity Level"
                           name="activityLevel"
                           value={formData.activityLevel}
                           className={inputClass}
@@ -286,6 +292,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
                           Sleep (hours/night)
                         </label>
                         <select
+                          aria-label="Sleep Hours"
                           name="sleepHours"
                           value={formData.sleepHours}
                           className={inputClass}
@@ -302,6 +309,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
                           Water Intake (L/day)
                         </label>
                         <select
+                          aria-label="Water Intake"
                           name="waterIntake"
                           value={formData.waterIntake}
                           className={inputClass}
@@ -319,6 +327,7 @@ export default function FitnessForm({ onSubmit, isLoading }: FitnessFormProps) {
                     <div>
                       <label className={labelClass}>Current Stress Level</label>
                       <select
+                        aria-label="Current Stress Level"
                         name="stressLevel"
                         value={formData.stressLevel}
                         className={inputClass}
