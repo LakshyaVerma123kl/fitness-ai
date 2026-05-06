@@ -143,8 +143,11 @@ export async function POST(req: Request) {
       }
 
       return NextResponse.json({
-        plan: reusedPlan,
-        provider: "cache-reuse",
+        ...reusedPlan,
+        _metadata: {
+          provider: "cache-reuse",
+          tdee,
+        },
       });
     }
 
