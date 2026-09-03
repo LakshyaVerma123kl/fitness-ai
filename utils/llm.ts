@@ -25,7 +25,7 @@ export const PROVIDERS = [
     model: "llama-3.3-70b-versatile",
     name: "Groq Llama 3.3 70B",
   },
-  { provider: "gemini", model: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+  { provider: "gemini", model: "gemini-3.5-flash", name: "Gemini 3.5 Flash" },
   { provider: "gemini", model: "gemini-pro", name: "Gemini Pro" },
   {
     provider: "huggingface",
